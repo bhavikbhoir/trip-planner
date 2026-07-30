@@ -1,0 +1,43 @@
+@use 'variables' as *;
+
+// Frosted glass panel — the core surface treatment for cards, forms, the topbar
+@mixin glass {
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: $radius-lg;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 10px 34px -18px var(--shadow);
+}
+
+// Hover lift for clickable glass cards (trip cards, etc.)
+@mixin card-hover {
+  transition: transform $transition, box-shadow $transition, border-color $transition;
+
+  &:hover {
+    transform: translateY(-4px);
+    border-color: color-mix(in srgb, var(--accent-1) 40%, var(--surface-border));
+  }
+}
+
+// Small tracked micro-label in the mono/data register — used sparingly,
+// never for full headings or body copy.
+@mixin eyebrow {
+  font-family: $font-mono;
+  font-size: $font-xs;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+@mixin flex-row($gap: $space-sm) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $gap;
+}
+
+@mixin mobile {
+  @media (max-width: #{$bp-mobile}) {
+    @content;
+  }
+}

@@ -1,0 +1,58 @@
+@use 'variables' as *;
+
+// Token-level theming: components read var(--*) only, never these mixins
+// directly, so light/dark/system-preference all stay in sync automatically.
+
+@mixin theme-light {
+  --bg-0: #{$color-bg-0-light};
+  --bg-1: #{$color-bg-1-light};
+  --surface: #{$color-surface-light};
+  --surface-solid: #{$color-surface-solid-light};
+  --surface-border: #{$color-surface-border-light};
+  --ink: #{$color-ink-light};
+  --ink-dim: #{$color-ink-dim-light};
+  --accent-1: #{$color-accent-1-light};
+  --accent-2: #{$color-accent-2-light};
+  --data: #{$color-data-light};
+  --success: #{$color-success-light};
+  --warn: #{$color-warn-light};
+  --glow: #{$color-glow-light};
+  --shadow: #{$color-shadow-light};
+}
+
+@mixin theme-dark {
+  --bg-0: #{$color-bg-0-dark};
+  --bg-1: #{$color-bg-1-dark};
+  --surface: #{$color-surface-dark};
+  --surface-solid: #{$color-surface-solid-dark};
+  --surface-border: #{$color-surface-border-dark};
+  --ink: #{$color-ink-dark};
+  --ink-dim: #{$color-ink-dim-dark};
+  --accent-1: #{$color-accent-1-dark};
+  --accent-2: #{$color-accent-2-dark};
+  --data: #{$color-data-dark};
+  --success: #{$color-success-dark};
+  --warn: #{$color-warn-dark};
+  --glow: #{$color-glow-dark};
+  --shadow: #{$color-shadow-dark};
+}
+
+:root {
+  @include theme-light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    @include theme-dark;
+  }
+}
+
+// Explicit overrides win over the media query in both directions —
+// these back an eventual in-app theme toggle if one gets added later.
+:root[data-theme='dark'] {
+  @include theme-dark;
+}
+
+:root[data-theme='light'] {
+  @include theme-light;
+}
