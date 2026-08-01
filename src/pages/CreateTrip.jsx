@@ -4,6 +4,7 @@ import { api } from '../utils/api'
 import { useAuth } from '../contexts/AuthContext'
 import AppShell from '../components/AppShell'
 import { Icon } from '../components/Icon'
+import PlaceAutocomplete from '../components/PlaceAutocomplete'
 import './pages.scss'
 
 export default function CreateTrip() {
@@ -60,16 +61,13 @@ export default function CreateTrip() {
         </div>
         <div className="field">
           <label htmlFor="destination">Destination</label>
-          <div className="field-input">
-            <Icon name="pin" />
-            <input
-              id="destination"
-              required
-              placeholder="e.g. Bali, Indonesia"
-              value={destination}
-              onChange={(e) => setDestination(e.target.value)}
-            />
-          </div>
+          <PlaceAutocomplete
+            id="destination"
+            required
+            placeholder="e.g. Bali, Indonesia"
+            value={destination}
+            onChange={setDestination}
+          />
         </div>
         <div className="row2">
           <div className="field">
