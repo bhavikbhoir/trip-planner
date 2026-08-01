@@ -9,6 +9,7 @@ import BookingForm from '../components/BookingForm'
 import DayMap from '../components/DayMap'
 import './pages.scss'
 
+const HTTP_URL_RE = /^https?:\/\//i
 const EVENT_ICONS = { plane: 'plane', hotel: 'bed', car: 'car', food: 'fork', activity: 'mountain', other: 'flag' }
 const BOOKING_ICONS = { hotel: 'bed', car: 'car', other: 'flag' }
 const BOOKING_LABELS = {
@@ -344,7 +345,7 @@ export default function Itinerary() {
                 <span>
                   {b.name} — {startLabel} {fmtDateTime(b.startDatetime)} · {endLabel} {fmtDateTime(b.endDatetime)}
                   {b.confirmation && <> · conf #{b.confirmation}</>}
-                  {b.referenceLink && (
+                  {b.referenceLink && HTTP_URL_RE.test(b.referenceLink) && (
                     <>
                       {' · '}
                       <a href={b.referenceLink} target="_blank" rel="noopener noreferrer" className="ref-link">

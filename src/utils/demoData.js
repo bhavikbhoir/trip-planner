@@ -6,6 +6,7 @@ export const DEMO_STORAGE_KEY = 'tp_demo'
 export const DEMO_USER = { userId: 'demo-user', username: 'you@manifest.app', displayName: 'Bhavik' }
 
 const DISPLAY_NAMES = { 'demo-user': 'Bhavik', sam: 'Sam', priya: 'Priya', jordan: 'Jordan' }
+const HTTP_URL_RE = /^https?:\/\//i
 
 // Mock GET .../weather responses, keyed by tripId — mirrors the real
 // endpoint's shape ({weather: {temperature, condition, city, icon}}), a
@@ -370,9 +371,12 @@ export async function demoRequest(method, path, body) {
     }
   }
 
-  // /trips/:tripId/join, /trips/:tripId/bookings, /trips/:tripId/suggestions, /trips/:tripId/finalize, /trips/:tripId/weather
+  // /trips/:tripId/join, /trips/:tripId/bookings, /trips/:tripId/suggestions, /trips/:tripId/finalize, /trips/:tripId/weather, /trips/:tripId/preview
   if (segments.length === 3) {
     const t = getOr404(segments[1])
+    if (segments[2] === 'preview' && method === 'GET') {
+      return { name: t.trip.name, destination: t.trip.destination, memberCount: t.members.length }
+    }
     if (segments[2] === 'weather' && method === 'GET') {
       const cityGuess = (t.trip.destination || '').split(',')[0].trim() || t.trip.destination
       return {
@@ -410,6 +414,10 @@ export async function demoRequest(method, path, body) {
       return { trip: t.trip }
     }
     if (segments[2] === 'bookings' && method === 'POST') {
+      const link = body?.referenceLink
+      if (link && !HTTP_URL_RE.test(link)) {
+        throw badRequest('referenceLink must start with http:// or https://')
+      }
       const booking = {
         bookingId: `bk-${Math.random().toString(36).slice(2, 8)}`,
         addedBy: DEMO_USER.userId,
@@ -420,6 +428,7 @@ export async function demoRequest(method, path, body) {
         endDatetime: body?.endDatetime,
         confirmation: body?.confirmation,
         cost: body?.cost,
+        referenceLink: link || null,
       }
       t.bookings.push(booking)
       return { booking }

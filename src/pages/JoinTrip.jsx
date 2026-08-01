@@ -10,18 +10,14 @@ export default function JoinTrip() {
   const { tripId } = useParams()
   const navigate = useNavigate()
   const { user } = useAuth()
-  const [trip, setTrip] = useState(null)
-  const [memberCount, setMemberCount] = useState(0)
+  const [preview, setPreview] = useState(null)
   const [error, setError] = useState('')
   const [isJoining, setIsJoining] = useState(false)
 
   useEffect(() => {
     api
-      .get(`/trips/${tripId}`)
-      .then((res) => {
-        setTrip(res.trip)
-        setMemberCount(res.members?.length || 0)
-      })
+      .get(`/trips/${tripId}/preview`)
+      .then((res) => setPreview(res))
       .catch((err) => setError(err.message || 'This invite link is invalid or has expired.'))
   }, [tripId])
 
@@ -43,9 +39,9 @@ export default function JoinTrip() {
       <div className="auth-shell">
         {error && <div className="error-banner">{error}</div>}
 
-        {!trip && !error && <p className="eyebrow">Loading invite…</p>}
+        {!preview && !error && <p className="eyebrow">Loading invite…</p>}
 
-        {trip && (
+        {preview && (
           <div className="panel glass invite-card">
             <div className="eyebrow">
               invite · /trip/{tripId}/join
@@ -53,9 +49,9 @@ export default function JoinTrip() {
             <p className="q-sub" style={{ marginTop: 12 }}>
               You're invited to
             </p>
-            <div className="trip-dest">{trip.name}</div>
+            <div className="trip-dest">{preview.name}</div>
             <p className="invite-by">
-              {trip.destination} · {memberCount} traveler{memberCount === 1 ? '' : 's'} so far
+              {preview.destination} · {preview.memberCount} traveler{preview.memberCount === 1 ? '' : 's'} so far
             </p>
             <button className="btn accent" onClick={handleJoin} disabled={isJoining}>
               {isJoining ? 'Joining…' : 'Join trip'}

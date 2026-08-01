@@ -11,6 +11,8 @@ const TYPES = [
   { value: 'other', label: 'Other', icon: 'flag' },
 ]
 
+const HTTP_URL_RE = /^https?:\/\//i
+
 export default function BookingForm({ tripId, onCreated, onCancel }) {
   const [type, setType] = useState('hotel')
   const [name, setName] = useState('')
@@ -26,6 +28,11 @@ export default function BookingForm({ tripId, onCreated, onCancel }) {
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
+    const link = referenceLink.trim()
+    if (link && !HTTP_URL_RE.test(link)) {
+      setError('Reference link must start with http:// or https://')
+      return
+    }
     setIsSubmitting(true)
     try {
       const booking = await api.post(`/trips/${tripId}/bookings`, {
