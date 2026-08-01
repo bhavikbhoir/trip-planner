@@ -9,6 +9,7 @@ export default function Register() {
   const { register, confirmRegistration, login } = useAuth()
   const navigate = useNavigate()
   const [stage, setStage] = useState('signup') // 'signup' | 'confirm'
+  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [code, setCode] = useState('')
@@ -20,7 +21,7 @@ export default function Register() {
     setError('')
     setIsSubmitting(true)
     try {
-      await register(email, password)
+      await register(email, password, name)
       setStage('confirm')
     } catch (err) {
       setError(err.message || 'Could not create your account.')
@@ -54,6 +55,20 @@ export default function Register() {
         {stage === 'signup' ? (
           <form className="panel glass auth-panel" onSubmit={handleSignUp}>
             {error && <div className="error-banner">{error}</div>}
+            <div className="field">
+              <label htmlFor="name">Name</label>
+              <div className="field-input">
+                <input
+                  id="name"
+                  type="text"
+                  autoComplete="name"
+                  required
+                  placeholder="What should we call you?"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              </div>
+            </div>
             <div className="field">
               <label htmlFor="email">Email</label>
               <div className="field-input">

@@ -62,6 +62,8 @@ export default function Preferences() {
   const [arrivalTime, setArrivalTime] = useState('')
   const [departureFlight, setDepartureFlight] = useState('')
   const [departureTime, setDepartureTime] = useState('')
+  const [transportMode, setTransportMode] = useState('')
+  const [seatsAvailable, setSeatsAvailable] = useState('')
 
   useEffect(() => {
     api
@@ -87,6 +89,8 @@ export default function Preferences() {
           setDepartureFlight(myLogistics.departure.flight || '')
           setDepartureTime(myLogistics.departure.datetime || '')
         }
+        if (myLogistics?.transportMode) setTransportMode(myLogistics.transportMode)
+        if (myLogistics?.seatsAvailable != null) setSeatsAvailable(String(myLogistics.seatsAvailable))
       })
       .catch((err) => setLoadError(err.message || 'Could not load this trip.'))
   }, [tripId, user])
@@ -118,10 +122,12 @@ export default function Preferences() {
         preferences: { food, activities, budgetPace, groupDynamics, dislikes, mustDo },
         companions: companions.filter((c) => c.name.trim()),
       })
-      if (arrivalFlight || arrivalTime || departureFlight || departureTime) {
+      if (arrivalFlight || arrivalTime || departureFlight || departureTime || transportMode) {
         await api.put(`/trips/${tripId}/logistics/me`, {
           arrival: arrivalFlight || arrivalTime ? { flight: arrivalFlight, datetime: arrivalTime } : null,
           departure: departureFlight || departureTime ? { flight: departureFlight, datetime: departureTime } : null,
+          transportMode: transportMode || undefined,
+          seatsAvailable: transportMode === 'driving' && seatsAvailable ? Number(seatsAvailable) : undefined,
         })
       }
       navigate(`/trip/${tripId}/itinerary`)
@@ -389,6 +395,48 @@ export default function Preferences() {
                     </div>
                   </div>
                 </div>
+
+                <div className="q-eyebrow" style={{ marginTop: 6 }}>
+                  <Icon name="car" />
+                  <span className="eyebrow">Getting around</span>
+                </div>
+                <div className="q-sub" style={{ marginBottom: 12 }}>
+                  Are you driving, or do you need a ride once you're there?
+                </div>
+                <div className="chip-grid">
+                  {[
+                    { value: 'driving', label: 'Driving myself' },
+                    { value: 'need_ride', label: 'Need a ride' },
+                    { value: 'not_driving', label: 'Not driving' },
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      className="chip"
+                      aria-pressed={transportMode === opt.value}
+                      onClick={() => setTransportMode((m) => (m === opt.value ? '' : opt.value))}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+                {transportMode === 'driving' && (
+                  <div className="field">
+                    <label htmlFor="seatsAvailable">Seats available for others</label>
+                    <div className="field-input">
+                      <Icon name="users" />
+                      <input
+                        id="seatsAvailable"
+                        type="number"
+                        min="0"
+                        max="8"
+                        placeholder="e.g. 2"
+                        value={seatsAvailable}
+                        onChange={(e) => setSeatsAvailable(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </motion.div>

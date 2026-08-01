@@ -3,7 +3,17 @@
 // returns, so pages need no special-casing (see api.js's `request()` early return).
 
 export const DEMO_STORAGE_KEY = 'tp_demo'
-export const DEMO_USER = { userId: 'demo-user', username: 'you@manifest.app' }
+export const DEMO_USER = { userId: 'demo-user', username: 'you@manifest.app', displayName: 'Bhavik' }
+
+const DISPLAY_NAMES = { 'demo-user': 'Bhavik', sam: 'Sam', priya: 'Priya', jordan: 'Jordan' }
+
+// Mock GET .../weather responses, keyed by tripId — mirrors the real
+// endpoint's shape ({weather: {temperature, condition, city, icon}}), a
+// current-conditions snapshot, not a forecast.
+const DEMO_WEATHER = {
+  'demo-bali': { temperature: 87, condition: 'scattered thunderstorms', city: 'Ubud', icon: '11d' },
+  'demo-cabin': { temperature: 61, condition: 'clear sky', city: 'Aspen', icon: '01d' },
+}
 
 export function isDemoMode() {
   return typeof window !== 'undefined' && window.localStorage.getItem(DEMO_STORAGE_KEY) === '1'
@@ -18,6 +28,12 @@ function notFound() {
 function badRequest(msg) {
   const e = new Error(msg || 'Not available in demo mode')
   e.status = 400
+  return e
+}
+
+function forbidden(msg) {
+  const e = new Error(msg)
+  e.status = 403
   return e
 }
 
@@ -40,6 +56,7 @@ function makeInitialStore() {
       members: [
         {
           userId: DEMO_USER.userId,
+          displayName: DISPLAY_NAMES[DEMO_USER.userId],
           role: 'owner',
           preferences: {
             food: ['Local street food', 'Vegetarian-friendly'],
@@ -53,6 +70,7 @@ function makeInitialStore() {
         },
         {
           userId: 'sam',
+          displayName: DISPLAY_NAMES.sam,
           role: 'member',
           preferences: {
             food: ['Fine dining', 'Cafes & coffee'],
@@ -66,6 +84,7 @@ function makeInitialStore() {
         },
         {
           userId: 'priya',
+          displayName: DISPLAY_NAMES.priya,
           role: 'member',
           preferences: {
             food: ['Vegetarian-friendly', 'No seafood'],
@@ -79,6 +98,7 @@ function makeInitialStore() {
         },
         {
           userId: 'jordan',
+          displayName: DISPLAY_NAMES.jordan,
           role: 'member',
           preferences: {
             food: ['Local street food'],
@@ -101,6 +121,8 @@ function makeInitialStore() {
           userId: 'sam',
           arrival: { flight: 'GA 412', datetime: '2026-11-14T09:40:00' },
           departure: { flight: 'GA 415', datetime: '2026-11-21T11:20:00' },
+          transportMode: 'driving',
+          seatsAvailable: 2,
         },
         {
           userId: 'priya',
@@ -111,6 +133,7 @@ function makeInitialStore() {
           userId: 'jordan',
           arrival: { flight: 'SQ 938', datetime: '2026-11-13T18:05:00' },
           departure: { flight: 'SQ 939', datetime: '2026-11-20T20:30:00' },
+          transportMode: 'need_ride',
         },
       ],
       bookings: [
@@ -123,6 +146,7 @@ function makeInitialStore() {
           endDatetime: '2026-11-21T11:00:00',
           confirmation: 'BVL-58213',
           cost: 840,
+          referenceLink: 'https://www.booking.com/hotel/id/ubud-jungle-villas.html',
           addedBy: DEMO_USER.userId,
         },
         {
@@ -147,8 +171,8 @@ function makeInitialStore() {
               events: [
                 { time: '9:40a', title: 'Sam arrives', icon: 'plane' },
                 { time: '1:15p', title: 'Priya arrives', icon: 'plane' },
-                { time: '3:00p', title: 'Check in — Ubud Jungle Villas', icon: 'hotel' },
-                { time: '6:00p', title: 'Dinner — Warung Sopa', icon: 'food' },
+                { time: '3:00p', title: 'Check in — Ubud Jungle Villas', icon: 'hotel', lat: -8.5069, lng: 115.2625 },
+                { time: '6:00p', title: 'Dinner — Warung Sopa', icon: 'food', lat: -8.5195, lng: 115.2617 },
               ],
             },
             {
@@ -160,11 +184,35 @@ function makeInitialStore() {
                   title: 'Sunrise trek, Mt. Batur',
                   icon: 'activity',
                   note: 'Maya (7) and Leo (10) are on this leg — swapped the summit push for the Kintamani viewpoint (30 min, same sunrise view).',
+                  lat: -8.2422,
+                  lng: 115.3752,
                 },
               ],
             },
           ],
         },
+      ],
+      suggestions: [
+        {
+          suggestionId: 'sug-1',
+          authorId: 'priya',
+          text: "Swap Day 2 lunch to somewhere vegetarian — the current pick has almost nothing for me.",
+          targetPlanVersion: 1,
+          status: 'open',
+          createdAt: '2026-07-21T09:00:00Z',
+        },
+        {
+          suggestionId: 'sug-2',
+          authorId: 'jordan',
+          text: 'Can we add a beach afternoon? Feels packed with hikes so far.',
+          targetPlanVersion: 1,
+          status: 'open',
+          createdAt: '2026-07-21T10:30:00Z',
+        },
+      ],
+      approvals: [
+        { userId: DEMO_USER.userId, planVersion: 1, approvedAt: '2026-07-20T11:00:00Z' },
+        { userId: 'sam', planVersion: 1, approvedAt: '2026-07-20T15:00:00Z' },
       ],
     },
     'demo-cabin': {
@@ -178,9 +226,9 @@ function makeInitialStore() {
         ownerId: DEMO_USER.userId,
       },
       members: [
-        { userId: DEMO_USER.userId, role: 'owner', preferences: { food: ['Cafes & coffee'], activities: ['Hiking & nature'], budgetPace: ['Mid-range'], groupDynamics: [], dislikes: '', mustDo: '' }, companions: [] },
-        { userId: 'sam', role: 'member', preferences: { food: [], activities: ['Nightlife'], budgetPace: [], groupDynamics: [], dislikes: '', mustDo: '' }, companions: [] },
-        { userId: 'priya', role: 'member', preferences: { food: [], activities: [], budgetPace: [], groupDynamics: [], dislikes: '', mustDo: '' }, companions: [] },
+        { userId: DEMO_USER.userId, displayName: DISPLAY_NAMES[DEMO_USER.userId], role: 'owner', preferences: { food: ['Cafes & coffee'], activities: ['Hiking & nature'], budgetPace: ['Mid-range'], groupDynamics: [], dislikes: '', mustDo: '' }, companions: [] },
+        { userId: 'sam', displayName: DISPLAY_NAMES.sam, role: 'member', preferences: { food: [], activities: ['Nightlife'], budgetPace: [], groupDynamics: [], dislikes: '', mustDo: '' }, companions: [] },
+        { userId: 'priya', displayName: DISPLAY_NAMES.priya, role: 'member', preferences: { food: [], activities: [], budgetPace: [], groupDynamics: [], dislikes: '', mustDo: '' }, companions: [] },
       ],
       logistics: [],
       bookings: [
@@ -214,6 +262,12 @@ function makeInitialStore() {
             },
           ],
         },
+      ],
+      suggestions: [],
+      approvals: [
+        { userId: DEMO_USER.userId, planVersion: 1, approvedAt: '2026-07-09T09:00:00Z' },
+        { userId: 'sam', planVersion: 1, approvedAt: '2026-07-09T12:00:00Z' },
+        { userId: 'priya', planVersion: 1, approvedAt: '2026-07-09T18:00:00Z' },
       ],
     },
   }
@@ -282,10 +336,14 @@ export async function demoRequest(method, path, body) {
       }
       store[tripId] = {
         trip,
-        members: [{ userId: DEMO_USER.userId, role: 'owner', preferences: null, companions: [] }],
+        members: [
+          { userId: DEMO_USER.userId, displayName: DEMO_USER.displayName, role: 'owner', preferences: null, companions: [] },
+        ],
         logistics: [],
         bookings: [],
         plans: [],
+        suggestions: [],
+        approvals: [],
       }
       return { trip }
     }
@@ -295,18 +353,61 @@ export async function demoRequest(method, path, body) {
   if (segments.length === 2) {
     const t = getOr404(segments[1])
     if (method === 'GET') {
-      return { trip: t.trip, members: t.members, logistics: t.logistics, bookings: t.bookings, plans: t.plans }
+      return {
+        trip: t.trip,
+        members: t.members,
+        logistics: t.logistics,
+        bookings: t.bookings,
+        plans: t.plans,
+        suggestions: t.suggestions || [],
+        approvals: t.approvals || [],
+      }
+    }
+    if (method === 'DELETE') {
+      if (t.trip.ownerId !== DEMO_USER.userId) throw forbidden('Only the trip owner can delete this trip.')
+      delete store[segments[1]]
+      return { deleted: true, tripId: segments[1] }
     }
   }
 
-  // /trips/:tripId/join, /trips/:tripId/bookings
+  // /trips/:tripId/join, /trips/:tripId/bookings, /trips/:tripId/suggestions, /trips/:tripId/finalize, /trips/:tripId/weather
   if (segments.length === 3) {
     const t = getOr404(segments[1])
+    if (segments[2] === 'weather' && method === 'GET') {
+      const cityGuess = (t.trip.destination || '').split(',')[0].trim() || t.trip.destination
+      return {
+        weather: DEMO_WEATHER[t.trip.tripId] || { temperature: 84, condition: 'scattered clouds', city: cityGuess, icon: '03d' },
+      }
+    }
     if (segments[2] === 'join' && method === 'POST') {
       if (!findMember(t, DEMO_USER.userId)) {
-        t.members.push({ userId: DEMO_USER.userId, role: 'member', preferences: null, companions: [] })
+        t.members.push({ userId: DEMO_USER.userId, displayName: DEMO_USER.displayName, role: 'member', preferences: null, companions: [] })
       }
       return { ok: true }
+    }
+    if (segments[2] === 'suggestions' && method === 'POST') {
+      const suggestion = {
+        suggestionId: `sug-${Math.random().toString(36).slice(2, 8)}`,
+        authorId: DEMO_USER.userId,
+        text: body?.text || '',
+        targetPlanVersion: body?.targetPlanVersion,
+        status: 'open',
+        createdAt: nowIso(),
+      }
+      t.suggestions = [...(t.suggestions || []), suggestion]
+      return { suggestion }
+    }
+    if (segments[2] === 'finalize' && method === 'POST') {
+      const isOwner = t.trip.ownerId === DEMO_USER.userId
+      const latest = t.plans.length ? t.plans.reduce((a, b) => (b.version > a.version ? b : a)) : null
+      if (!latest) throw badRequest('Generate an itinerary before finalizing.')
+      const approvedIds = new Set((t.approvals || []).filter((a) => a.planVersion === latest.version).map((a) => a.userId))
+      const missing = t.members.filter((m) => !approvedIds.has(m.userId))
+      if (!isOwner && missing.length > 0) {
+        throw badRequest(`${missing.length} of ${t.members.length} members haven't approved yet.`)
+      }
+      t.trip.status = 'finalized'
+      return { trip: t.trip }
     }
     if (segments[2] === 'bookings' && method === 'POST') {
       const booking = {
@@ -333,12 +434,34 @@ export async function demoRequest(method, path, body) {
     if (segments[2] === 'members' && segments[3] === 'me' && method === 'PATCH') {
       let m = findMember(t, DEMO_USER.userId)
       if (!m) {
-        m = { userId: DEMO_USER.userId, role: 'member', preferences: null, companions: [] }
+        m = { userId: DEMO_USER.userId, displayName: DEMO_USER.displayName, role: 'member', preferences: null, companions: [] }
         t.members.push(m)
       }
       m.preferences = { ...(m.preferences || {}), ...(body?.preferences || {}) }
       m.companions = body?.companions ?? m.companions
+      m.displayName = body?.displayName ?? m.displayName ?? DEMO_USER.displayName
       return { member: m }
+    }
+
+    if (segments[2] === 'members' && segments[3] === 'me' && method === 'DELETE') {
+      if (t.trip.ownerId === DEMO_USER.userId) throw forbidden('Trip owners can’t leave — delete the trip instead.')
+      t.members = t.members.filter((m) => m.userId !== DEMO_USER.userId)
+      t.logistics = t.logistics.filter((l) => l.userId !== DEMO_USER.userId)
+      return { ok: true }
+    }
+
+    if (segments[2] === 'suggestions' && method === 'DELETE') {
+      t.suggestions = (t.suggestions || []).filter((s) => s.suggestionId !== segments[3])
+      return { ok: true }
+    }
+
+    if (segments[2] === 'approvals' && segments[3] === 'me' && method === 'PUT') {
+      const planVersion = body?.planVersion
+      const existing = (t.approvals || []).find((a) => a.userId === DEMO_USER.userId && a.planVersion === planVersion)
+      if (existing) return { approval: existing }
+      const approval = { userId: DEMO_USER.userId, planVersion, approvedAt: nowIso() }
+      t.approvals = [...(t.approvals || []), approval]
+      return { approval }
     }
 
     if (segments[2] === 'logistics' && segments[3] === 'me' && method === 'PUT') {

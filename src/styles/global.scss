@@ -219,6 +219,16 @@ h3 {
   &.ghost {
     background: transparent;
   }
+  &.warn {
+    background: transparent;
+    border-color: var(--warn);
+    color: var(--warn);
+  }
+  &.warn.solid {
+    background: var(--warn);
+    border-color: var(--warn);
+    color: #fff;
+  }
   &.small {
     padding: 7px 12px;
     font-size: $font-xs;
@@ -328,6 +338,27 @@ h3 {
   border-radius: $radius-sm;
   font-size: $font-sm;
   margin-bottom: 16px;
+}
+
+.confirm-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  background: color-mix(in srgb, var(--warn) 10%, var(--surface-solid));
+  border: 1px solid var(--warn);
+  color: var(--ink);
+  padding: 12px 14px;
+  border-radius: $radius-sm;
+  font-size: $font-sm;
+  margin-bottom: 16px;
+
+  .confirm-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+  }
 }
 
 // ── Status ──────────────────────────────────────────────────────────

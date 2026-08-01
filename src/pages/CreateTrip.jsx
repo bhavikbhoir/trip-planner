@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { api } from '../utils/api'
+import { useAuth } from '../contexts/AuthContext'
 import AppShell from '../components/AppShell'
 import { Icon } from '../components/Icon'
 import './pages.scss'
 
 export default function CreateTrip() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [name, setName] = useState('')
   const [destination, setDestination] = useState('')
   const [startDate, setStartDate] = useState('')
@@ -19,7 +21,7 @@ export default function CreateTrip() {
     setError('')
     setIsSubmitting(true)
     try {
-      const res = await api.post('/trips', { name, destination, startDate, endDate })
+      const res = await api.post('/trips', { name, destination, startDate, endDate, displayName: user?.displayName })
       navigate(`/trip/${res.trip.tripId}/preferences`, { replace: true })
     } catch (err) {
       setError(err.message || 'Could not create the trip.')

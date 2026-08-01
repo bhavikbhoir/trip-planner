@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { api } from '../utils/api'
+import { useAuth } from '../contexts/AuthContext'
 import AppShell from '../components/AppShell'
 import { Icon } from '../components/Icon'
 import './pages.scss'
@@ -8,6 +9,7 @@ import './pages.scss'
 export default function JoinTrip() {
   const { tripId } = useParams()
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [trip, setTrip] = useState(null)
   const [memberCount, setMemberCount] = useState(0)
   const [error, setError] = useState('')
@@ -27,7 +29,7 @@ export default function JoinTrip() {
     setIsJoining(true)
     setError('')
     try {
-      await api.post(`/trips/${tripId}/join`)
+      await api.post(`/trips/${tripId}/join`, { displayName: user?.displayName })
       navigate(`/trip/${tripId}/preferences`, { replace: true })
     } catch (err) {
       setError(err.message || 'Could not join this trip.')

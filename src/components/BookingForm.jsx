@@ -19,6 +19,7 @@ export default function BookingForm({ tripId, onCreated, onCancel }) {
   const [endDatetime, setEndDatetime] = useState('')
   const [confirmation, setConfirmation] = useState('')
   const [cost, setCost] = useState('')
+  const [referenceLink, setReferenceLink] = useState('')
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -35,6 +36,7 @@ export default function BookingForm({ tripId, onCreated, onCancel }) {
         endDatetime,
         confirmation: confirmation || undefined,
         cost: cost ? Number(cost) : undefined,
+        referenceLink: referenceLink.trim() || undefined,
       })
       onCreated?.(booking.booking)
     } catch (err) {
@@ -133,6 +135,20 @@ export default function BookingForm({ tripId, onCreated, onCancel }) {
             <Icon name="wallet" />
             <input id="bookingCost" type="number" min="0" step="0.01" value={cost} onChange={(e) => setCost(e.target.value)} />
           </div>
+        </div>
+      </div>
+
+      <div className="field">
+        <label htmlFor="bookingLink">Reference link</label>
+        <div className="field-input">
+          <Icon name="link" />
+          <input
+            id="bookingLink"
+            type="url"
+            placeholder="Booking.com confirmation, PDF, etc."
+            value={referenceLink}
+            onChange={(e) => setReferenceLink(e.target.value)}
+          />
         </div>
       </div>
 

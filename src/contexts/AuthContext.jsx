@@ -7,6 +7,7 @@ import {
   signUp as amplifySignUp,
   confirmSignUp as amplifyConfirmSignUp,
   fetchAuthSession,
+  fetchUserAttributes,
 } from 'aws-amplify/auth'
 import { setTokenProvider, setAuthErrorHandler } from '../utils/api'
 import { DEMO_STORAGE_KEY, DEMO_USER, isDemoMode } from '../utils/demoData'
@@ -21,6 +22,18 @@ Amplify.configure({
 })
 
 const AuthContext = createContext(null)
+
+async function loadUserWithDisplayName() {
+  const cognitoUser = await getCurrentUser()
+  let displayName = ''
+  try {
+    const attrs = await fetchUserAttributes()
+    displayName = attrs.name || ''
+  } catch {
+    // attributes unavailable — fall back below rather than fail sign-in
+  }
+  return { ...cognitoUser, displayName }
+}
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
@@ -59,7 +72,7 @@ export function AuthProvider({ children }) {
       return
     }
 
-    getCurrentUser()
+    loadUserWithDisplayName()
       .then((cognitoUser) => setUser(cognitoUser))
       .catch(() => setUser(null))
       .finally(() => setIsLoading(false))
@@ -73,16 +86,16 @@ export function AuthProvider({ children }) {
 
   async function login(email, password) {
     await amplifySignIn({ username: email, password })
-    const cognitoUser = await getCurrentUser()
+    const cognitoUser = await loadUserWithDisplayName()
     setUser(cognitoUser)
     return cognitoUser
   }
 
-  async function register(email, password) {
+  async function register(email, password, name) {
     return amplifySignUp({
       username: email,
       password,
-      options: { userAttributes: { email } },
+      options: { userAttributes: { email, name } },
     })
   }
 

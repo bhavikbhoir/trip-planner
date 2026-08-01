@@ -30,6 +30,8 @@ export function IconSprite() {
         <symbol id="icon-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></symbol>
         <symbol id="icon-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" /></symbol>
         <symbol id="icon-baby" viewBox="0 0 24 24"><circle cx="12" cy="7" r="3.2" /><path d="M6 20c0-4 2.5-6.5 6-6.5s6 2.5 6 6.5" /><path d="M9.5 6c0-1.5 3-1.5 3-3" /></symbol>
+        <symbol id="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5" /><path d="M12 2.5v3M12 18.5v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2.5 12h3M18.5 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1" /></symbol>
+        <symbol id="icon-map" viewBox="0 0 24 24"><path d="M9 4 3 6.5v13L9 17l6 2.5 6-2.5v-13L15 6.5 9 4z" strokeLinejoin="round" /><path d="M9 4v13M15 6.5v13" /></symbol>
       </defs>
     </svg>
   )
