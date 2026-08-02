@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { api } from '../utils/api'
 import { useAuth } from '../contexts/AuthContext'
@@ -10,6 +10,11 @@ import DayMap from '../components/DayMap'
 import './pages.scss'
 
 const HTTP_URL_RE = /^https?:\/\//i
+// Generation now runs asynchronously in the background (the previous synchronous
+// path hit API Gateway's hard 29s ceiling) — POST just triggers it, and we poll
+// the trip until a new plan version (or a recorded error) shows up.
+const GENERATE_POLL_INTERVAL_MS = 3000
+const GENERATE_POLL_TIMEOUT_MS = 90000
 const EVENT_ICONS = { plane: 'plane', hotel: 'bed', car: 'car', food: 'fork', activity: 'mountain', other: 'flag' }
 const BOOKING_ICONS = { hotel: 'bed', car: 'car', other: 'flag' }
 const BOOKING_LABELS = {
@@ -57,8 +62,24 @@ export default function Itinerary() {
   const [isExiting, setIsExiting] = useState(false)
   const [exitError, setExitError] = useState('')
 
-  async function loadTrip() {
-    const res = await api.get(`/trips/${tripId}`)
+  const mountedRef = useRef(true)
+  const pollTimeoutRef = useRef(null)
+
+  useEffect(() => {
+    // Explicit assignment here (not just the initial useRef(true)) matters:
+    // React 18 StrictMode double-invokes effects in dev (mount → cleanup →
+    // mount again), and the cleanup below sets this false — without
+    // resetting it true on (re-)mount, every poll would see mounted=false
+    // and die silently on its first tick in dev, even though the component
+    // is genuinely still mounted.
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+      if (pollTimeoutRef.current) clearTimeout(pollTimeoutRef.current)
+    }
+  }, [])
+
+  function applyTripResponse(res) {
     setTrip(res.trip)
     setMembers(res.members || [])
     setLogistics(res.logistics || [])
@@ -66,6 +87,12 @@ export default function Itinerary() {
     setPlans(res.plans || [])
     setSuggestions(res.suggestions || [])
     setApprovals(res.approvals || [])
+    return res
+  }
+
+  async function loadTrip() {
+    const res = await api.get(`/trips/${tripId}`)
+    applyTripResponse(res)
   }
 
   useEffect(() => {
@@ -81,14 +108,61 @@ export default function Itinerary() {
   async function handleGenerate() {
     setGenerateError('')
     setIsGenerating(true)
+
+    const versionBefore = latestPlan ? latestPlan.version : 0
+    const startedAt = Date.now()
+
     try {
       await api.post(`/trips/${tripId}/plan/generate`)
-      await loadTrip()
     } catch (err) {
-      setGenerateError(err.message || 'Could not generate an itinerary — you can try again.')
-    } finally {
-      setIsGenerating(false)
+      if (mountedRef.current) {
+        setGenerateError(err.message || 'Could not start generating an itinerary — you can try again.')
+        setIsGenerating(false)
+      }
+      return
     }
+
+    pollForPlan(versionBefore, startedAt)
+  }
+
+  function pollForPlan(versionBefore, startedAt) {
+    const poll = async () => {
+      if (!mountedRef.current) return
+
+      if (Date.now() - startedAt > GENERATE_POLL_TIMEOUT_MS) {
+        setGenerateError('This is taking longer than expected — try again.')
+        setIsGenerating(false)
+        return
+      }
+
+      try {
+        const res = await api.get(`/trips/${tripId}`)
+        if (!mountedRef.current) return
+
+        const newVersion = (res.plans || []).reduce((max, p) => Math.max(max, p.version), 0)
+        const errAt = res.trip?.lastGenerationError?.at ? new Date(res.trip.lastGenerationError.at).getTime() : null
+
+        if (newVersion > versionBefore) {
+          applyTripResponse(res)
+          setIsGenerating(false)
+          return
+        }
+
+        if (errAt && errAt >= startedAt) {
+          applyTripResponse(res)
+          setGenerateError(res.trip.lastGenerationError.message || 'Could not generate an itinerary — you can try again.')
+          setIsGenerating(false)
+          return
+        }
+      } catch {
+        // Transient failure mid-poll — keep trying until the overall timeout, rather
+        // than aborting the whole wait over one flaky request.
+      }
+
+      pollTimeoutRef.current = setTimeout(poll, GENERATE_POLL_INTERVAL_MS)
+    }
+
+    poll()
   }
 
   function handleBookingCreated(booking) {
