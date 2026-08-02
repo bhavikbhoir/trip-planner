@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import AppShell from '../components/AppShell'
 import { Icon } from '../components/Icon'
@@ -8,6 +8,7 @@ import './pages.scss'
 export default function Register() {
   const { register, confirmRegistration, login } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [stage, setStage] = useState('signup') // 'signup' | 'confirm'
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -37,7 +38,7 @@ export default function Register() {
     try {
       await confirmRegistration(email, code)
       await login(email, password)
-      navigate('/', { replace: true })
+      navigate(searchParams.get('next') || '/', { replace: true })
     } catch (err) {
       setError(err.message || 'Could not confirm your account.')
     } finally {
@@ -101,7 +102,10 @@ export default function Register() {
               <Icon name="plane" />
             </button>
             <p className="auth-switch">
-              Already have an account? <Link to="/login">Sign in</Link>
+              Already have an account?{' '}
+              <Link to={searchParams.get('next') ? `/login?next=${encodeURIComponent(searchParams.get('next'))}` : '/login'}>
+                Sign in
+              </Link>
             </p>
           </form>
         ) : (

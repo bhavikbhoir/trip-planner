@@ -73,7 +73,10 @@ export default function Login() {
             <Icon name="plane" />
           </button>
           <p className="auth-switch">
-            No account? <Link to="/register">Create one</Link>
+            No account?{' '}
+            <Link to={searchParams.get('next') ? `/register?next=${encodeURIComponent(searchParams.get('next'))}` : '/register'}>
+              Create one
+            </Link>
           </p>
 
           <div className="auth-divider">
