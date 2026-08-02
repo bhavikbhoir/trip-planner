@@ -14,6 +14,7 @@ export default function CreateTrip() {
   const [destination, setDestination] = useState('')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
+  const [tripType, setTripType] = useState('')
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -22,7 +23,14 @@ export default function CreateTrip() {
     setError('')
     setIsSubmitting(true)
     try {
-      const res = await api.post('/trips', { name, destination, startDate, endDate, displayName: user?.displayName })
+      const res = await api.post('/trips', {
+        name,
+        destination,
+        startDate,
+        endDate,
+        displayName: user?.displayName,
+        tripType: tripType || undefined,
+      })
       navigate(`/trip/${res.trip.tripId}/preferences`, { replace: true })
     } catch (err) {
       setError(err.message || 'Could not create the trip.')
@@ -89,6 +97,28 @@ export default function CreateTrip() {
               <Icon name="calendar" />
               <input id="end" type="date" required value={endDate} onChange={(e) => setEndDate(e.target.value)} />
             </div>
+          </div>
+        </div>
+        <div className="field">
+          <label htmlFor="tripType">What kind of trip is this?</label>
+          <div className="chip-grid" id="tripType">
+            {[
+              { value: 'business', label: 'Business' },
+              { value: 'leisure', label: 'Leisure' },
+              { value: 'friends', label: 'Friends' },
+              { value: 'family', label: 'Family' },
+              { value: 'date', label: 'Date' },
+            ].map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                className="chip"
+                aria-pressed={tripType === opt.value}
+                onClick={() => setTripType((t) => (t === opt.value ? '' : opt.value))}
+              >
+                {opt.label}
+              </button>
+            ))}
           </div>
         </div>
         <button className="btn accent" type="submit" disabled={isSubmitting}>

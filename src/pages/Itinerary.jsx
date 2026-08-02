@@ -309,6 +309,12 @@ export default function Itinerary() {
           <h1 style={{ fontSize: '1.15rem', marginTop: latestPlan ? 4 : 0 }}>{trip ? trip.name : 'Loading…'}</h1>
         </div>
         <div className="itin-actions">
+          {latestPlan && (
+            <Link className="btn small ghost" to={`/trip/${tripId}/today`}>
+              <Icon name="sun" />
+              Today
+            </Link>
+          )}
           <button className="btn small ghost" type="button" onClick={handleCopyInvite}>
             <Icon name={linkCopied ? 'check' : 'link'} />
             {linkCopied ? 'Link copied' : 'Invite'}
@@ -493,6 +499,12 @@ export default function Itinerary() {
                     <div className="time mono">{ev.time}</div>
                     <div className="desc">
                       {ev.title}
+                      {ev.timeToSpend && (
+                        <span className="event-cost mono">
+                          <Icon name="clock" />
+                          {ev.timeToSpend}
+                        </span>
+                      )}
                       {ev.costPerPerson != null && (
                         <span className="event-cost mono">${ev.costPerPerson}/person</span>
                       )}

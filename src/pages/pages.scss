@@ -461,7 +461,9 @@
 }
 
 .event-cost {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
   margin-left: 8px;
   padding: 1px 8px;
   border-radius: 999px;
@@ -470,6 +472,11 @@
   color: var(--data);
   background: color-mix(in srgb, var(--data) 14%, transparent);
   vertical-align: middle;
+
+  .icon {
+    width: 10px;
+    height: 10px;
+  }
 }
 
 .event .note {

@@ -42,6 +42,16 @@ function nowIso() {
   return new Date().toISOString()
 }
 
+// Mirrors trip-planner-api's functions/trips/today.js — event times are
+// "H:MMa/p" strings, so a plain string sort would put "10:00a" before "9:40a".
+function timeToMinutes(time) {
+  const match = /^(\d{1,2}):(\d{2})\s*([ap])/i.exec((time || '').trim())
+  if (!match) return Number.MAX_SAFE_INTEGER
+  let hour = parseInt(match[1], 10) % 12
+  if (match[3].toLowerCase() === 'p') hour += 12
+  return hour * 60 + parseInt(match[2], 10)
+}
+
 function makeInitialStore() {
   return {
     'demo-bali': {
@@ -53,6 +63,7 @@ function makeInitialStore() {
         endDate: '2026-11-21',
         status: 'planning',
         ownerId: DEMO_USER.userId,
+        tripType: 'friends',
       },
       members: [
         {
@@ -173,7 +184,7 @@ function makeInitialStore() {
                 { time: '9:40a', title: 'Sam arrives', icon: 'plane' },
                 { time: '1:15p', title: 'Priya arrives', icon: 'plane' },
                 { time: '3:00p', title: 'Check in — Ubud Jungle Villas', icon: 'hotel', lat: -8.5069, lng: 115.2625 },
-                { time: '6:00p', title: 'Dinner — Warung Sopa', icon: 'food', lat: -8.5195, lng: 115.2617, costPerPerson: 12 },
+                { time: '6:00p', title: 'Dinner — Warung Sopa', icon: 'food', lat: -8.5195, lng: 115.2617, costPerPerson: 12, timeToSpend: '1–1.5 hrs' },
               ],
             },
             {
@@ -188,6 +199,7 @@ function makeInitialStore() {
                   lat: -8.2422,
                   lng: 115.3752,
                   costPerPerson: 35,
+                  timeToSpend: '~1.5 hrs',
                 },
               ],
             },
@@ -341,8 +353,13 @@ function buildNextPlan(t) {
 }
 
 // Router mirroring the real API's routes — matched by (method, path segments).
+// Split the query string off before segmenting — nothing used one until the
+// "today" endpoint's ?date= param, and left in place it would corrupt the
+// last path segment (e.g. "today?date=...") for every route below.
 export async function demoRequest(method, path, body) {
-  const segments = path.split('/').filter(Boolean)
+  const [cleanPath, queryString] = path.split('?')
+  const query = new URLSearchParams(queryString || '')
+  const segments = cleanPath.split('/').filter(Boolean)
 
   if (segments[0] === 'notifications') {
     if (segments.length === 1 && method === 'GET') {
@@ -371,6 +388,7 @@ export async function demoRequest(method, path, body) {
         endDate: body?.endDate || '',
         status: 'planning',
         ownerId: DEMO_USER.userId,
+        tripType: body?.tripType || null,
       }
       store[tripId] = {
         trip,
@@ -413,6 +431,23 @@ export async function demoRequest(method, path, body) {
     const t = getOr404(segments[1])
     if (segments[2] === 'preview' && method === 'GET') {
       return { name: t.trip.name, destination: t.trip.destination, memberCount: t.members.length }
+    }
+    if (segments[2] === 'today' && method === 'GET') {
+      const latest = t.plans.length ? t.plans.reduce((a, b) => (b.version > a.version ? b : a)) : null
+      // Demo seed days use display-formatted dates ('Nov 14, Sat'), not the
+      // real backend's ISO "YYYY-MM-DD" — an exact match against the real
+      // "today" query param would (correctly) almost never hit, since these
+      // demo trips aren't scheduled around the actual current date. Fall
+      // back to the first day of the latest plan so the page has something
+      // to show; an exact day.date match still wins if the caller passes it.
+      const day = (latest?.days || []).find((d) => d.date === query.get('date')) || latest?.days?.[0] || null
+      return {
+        date: day?.date || null,
+        tripStatus: t.trip.status,
+        planVersion: latest?.version || null,
+        events: (day?.events || []).slice().sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time)),
+        bookings: t.bookings,
+      }
     }
     if (segments[2] === 'weather' && method === 'GET') {
       const cityGuess = (t.trip.destination || '').split(',')[0].trim() || t.trip.destination

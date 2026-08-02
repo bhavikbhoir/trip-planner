@@ -335,67 +335,6 @@ export default function Preferences() {
 
             {STEPS[stepIndex] === 'logistics' && (
               <>
-                <div className="q-eyebrow">
-                  <Icon name="plane" />
-                  <span className="eyebrow">Your logistics</span>
-                </div>
-                <div className="q-title">When do you land / leave?</div>
-                <div className="q-sub">This anchors the itinerary to when you're actually there.</div>
-                <div className="row2">
-                  <div className="field">
-                    <label htmlFor="arrivalFlight">Arrival flight</label>
-                    <div className="field-input">
-                      <Icon name="plane" />
-                      <input
-                        id="arrivalFlight"
-                        type="text"
-                        placeholder="e.g. GA 412"
-                        value={arrivalFlight}
-                        onChange={(e) => setArrivalFlight(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  <div className="field">
-                    <label htmlFor="arrivalTime">Arrival time</label>
-                    <div className="field-input">
-                      <Icon name="clock" />
-                      <input
-                        id="arrivalTime"
-                        type="datetime-local"
-                        value={arrivalTime}
-                        onChange={(e) => setArrivalTime(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                </div>
-                <div className="row2">
-                  <div className="field">
-                    <label htmlFor="departureFlight">Departure flight</label>
-                    <div className="field-input">
-                      <Icon name="plane" />
-                      <input
-                        id="departureFlight"
-                        type="text"
-                        placeholder="e.g. GA 415"
-                        value={departureFlight}
-                        onChange={(e) => setDepartureFlight(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  <div className="field">
-                    <label htmlFor="departureTime">Departure time</label>
-                    <div className="field-input">
-                      <Icon name="clock" />
-                      <input
-                        id="departureTime"
-                        type="datetime-local"
-                        value={departureTime}
-                        onChange={(e) => setDepartureTime(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                </div>
-
                 <div className="q-eyebrow" style={{ marginTop: 6 }}>
                   <Icon name="car" />
                   <span className="eyebrow">Getting around</span>
@@ -419,6 +358,69 @@ export default function Preferences() {
                       {opt.label}
                     </button>
                   ))}
+                </div>
+
+                <div className="q-eyebrow" style={{ marginTop: 18 }}>
+                  <Icon name="plane" />
+                  <span className="eyebrow">Your logistics</span>
+                </div>
+                <div className="q-title">
+                  {transportMode === 'driving' ? 'When do you plan to arrive / need to leave?' : 'When do you land / leave?'}
+                </div>
+                <div className="q-sub">This anchors the itinerary to when you're actually there.</div>
+                <div className="row2">
+                  <div className="field">
+                    <label htmlFor="arrivalFlight">{transportMode === 'driving' ? 'Notes (optional)' : 'Arrival flight'}</label>
+                    <div className="field-input">
+                      <Icon name={transportMode === 'driving' ? 'car' : 'plane'} />
+                      <input
+                        id="arrivalFlight"
+                        type="text"
+                        placeholder={transportMode === 'driving' ? 'e.g. taking the scenic route' : 'e.g. GA 412'}
+                        value={arrivalFlight}
+                        onChange={(e) => setArrivalFlight(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="field">
+                    <label htmlFor="arrivalTime">{transportMode === 'driving' ? 'Arrive by' : 'Arrival time'}</label>
+                    <div className="field-input">
+                      <Icon name="clock" />
+                      <input
+                        id="arrivalTime"
+                        type="datetime-local"
+                        value={arrivalTime}
+                        onChange={(e) => setArrivalTime(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="row2">
+                  <div className="field">
+                    <label htmlFor="departureFlight">{transportMode === 'driving' ? 'Notes (optional)' : 'Departure flight'}</label>
+                    <div className="field-input">
+                      <Icon name={transportMode === 'driving' ? 'car' : 'plane'} />
+                      <input
+                        id="departureFlight"
+                        type="text"
+                        placeholder={transportMode === 'driving' ? 'e.g. stopping overnight on the way back' : 'e.g. GA 415'}
+                        value={departureFlight}
+                        onChange={(e) => setDepartureFlight(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="field">
+                    <label htmlFor="departureTime">{transportMode === 'driving' ? 'Need to leave by' : 'Departure time'}</label>
+                    <div className="field-input">
+                      <Icon name="clock" />
+                      <input
+                        id="departureTime"
+                        type="datetime-local"
+                        value={departureTime}
+                        onChange={(e) => setDepartureTime(e.target.value)}
+                      />
+                    </div>
+                  </div>
                 </div>
                 {transportMode === 'driving' && (
                   <div className="field">

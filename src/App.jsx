@@ -9,6 +9,7 @@ import CreateTrip from './pages/CreateTrip'
 import JoinTrip from './pages/JoinTrip'
 import Preferences from './pages/Preferences'
 import Itinerary from './pages/Itinerary'
+import DayOf from './pages/DayOf'
 
 function ProtectedRoute({ children }) {
   const { user, isLoading } = useAuth()
@@ -72,6 +73,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <Itinerary />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/trip/:tripId/today"
+          element={
+            <ProtectedRoute>
+              <DayOf />
             </ProtectedRoute>
           }
         />
