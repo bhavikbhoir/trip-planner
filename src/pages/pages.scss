@@ -460,6 +460,18 @@
   font-weight: 600;
 }
 
+.event-cost {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: $font-xs;
+  font-weight: 700;
+  color: var(--data);
+  background: color-mix(in srgb, var(--data) 14%, transparent);
+  vertical-align: middle;
+}
+
 .event .note {
   font-size: $font-sm;
   color: var(--ink-dim);

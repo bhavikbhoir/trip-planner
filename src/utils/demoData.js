@@ -173,7 +173,7 @@ function makeInitialStore() {
                 { time: '9:40a', title: 'Sam arrives', icon: 'plane' },
                 { time: '1:15p', title: 'Priya arrives', icon: 'plane' },
                 { time: '3:00p', title: 'Check in — Ubud Jungle Villas', icon: 'hotel', lat: -8.5069, lng: 115.2625 },
-                { time: '6:00p', title: 'Dinner — Warung Sopa', icon: 'food', lat: -8.5195, lng: 115.2617 },
+                { time: '6:00p', title: 'Dinner — Warung Sopa', icon: 'food', lat: -8.5195, lng: 115.2617, costPerPerson: 12 },
               ],
             },
             {
@@ -187,6 +187,7 @@ function makeInitialStore() {
                   note: 'Maya (7) and Leo (10) are on this leg — swapped the summit push for the Kintamani viewpoint (30 min, same sunrise view).',
                   lat: -8.2422,
                   lng: 115.3752,
+                  costPerPerson: 35,
                 },
               ],
             },
