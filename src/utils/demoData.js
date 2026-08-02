@@ -276,6 +276,30 @@ function makeInitialStore() {
 
 let store = makeInitialStore()
 
+// Seeded so the notification bell has something to show in demo mode — real
+// notifications are fanned out server-side on POST /trips/:id/join, which
+// demo mode has no independent-actor model to simulate, so these are static.
+let notifications = [
+  {
+    notificationId: 'notif-1',
+    tripId: 'demo-bali',
+    tripName: 'Bali w/ Crew',
+    type: 'member_joined',
+    actorDisplayName: 'Jordan',
+    createdAt: '2026-07-25T14:00:00Z',
+    read: false,
+  },
+  {
+    notificationId: 'notif-2',
+    tripId: 'demo-bali',
+    tripName: 'Bali w/ Crew',
+    type: 'member_joined',
+    actorDisplayName: 'Priya',
+    createdAt: '2026-07-20T09:30:00Z',
+    read: true,
+  },
+]
+
 function findMember(t, userId) {
   return t.members.find((m) => m.userId === userId)
 }
@@ -318,6 +342,18 @@ function buildNextPlan(t) {
 // Router mirroring the real API's routes — matched by (method, path segments).
 export async function demoRequest(method, path, body) {
   const segments = path.split('/').filter(Boolean)
+
+  if (segments[0] === 'notifications') {
+    if (segments.length === 1 && method === 'GET') {
+      const sorted = [...notifications].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 50)
+      return { notifications: sorted, unreadCount: notifications.filter((n) => !n.read).length }
+    }
+    if (segments.length === 2 && segments[1] === 'mark-read' && method === 'POST') {
+      notifications = notifications.map((n) => ({ ...n, read: true }))
+      return { ok: true }
+    }
+    throw badRequest(`No demo handler for ${method} ${path}`)
+  }
 
   if (segments[0] !== 'trips') throw notFound()
 

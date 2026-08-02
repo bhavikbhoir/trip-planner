@@ -154,6 +154,124 @@ h3 {
   }
 }
 
+.notif-wrap {
+  position: relative;
+}
+
+.notif-bell {
+  position: relative;
+
+  &:hover {
+    color: var(--accent-1);
+    border-color: var(--accent-1);
+  }
+}
+
+.notif-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  border-radius: 999px;
+  background: var(--accent-1);
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+  line-height: 1;
+}
+
+.notif-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 320px;
+  max-width: calc(100vw - 32px);
+  max-height: 360px;
+  overflow-y: auto;
+  background: var(--surface-solid);
+  border: 1px solid var(--surface-border);
+  border-radius: $radius-sm;
+  box-shadow: 0 10px 30px -12px var(--shadow);
+  z-index: 30;
+  padding: 6px;
+}
+
+.notif-panel-head {
+  font-size: $font-xs;
+  font-weight: 700;
+  color: var(--ink-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 8px 10px 6px;
+}
+
+.notif-empty {
+  padding: 16px 10px;
+  font-size: $font-sm;
+  color: var(--ink-dim);
+  text-align: center;
+}
+
+.notif-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  padding: 9px 10px;
+  border-radius: $radius-sm;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--ink);
+
+  &:hover {
+    background: color-mix(in srgb, var(--accent-1) 8%, transparent);
+  }
+
+  &.unread .notif-label {
+    font-weight: 700;
+  }
+}
+
+.notif-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--data) 16%, transparent);
+  color: var(--data);
+
+  .icon {
+    width: 13px;
+    height: 13px;
+  }
+}
+
+.notif-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.notif-label {
+  font-size: $font-sm;
+  line-height: 1.35;
+}
+
+.notif-time {
+  font-size: $font-xs;
+  color: var(--ink-dim);
+}
+
 .page-head {
   margin-bottom: 22px;
 
