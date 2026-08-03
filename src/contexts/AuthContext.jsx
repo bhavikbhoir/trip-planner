@@ -8,8 +8,9 @@ import {
   confirmSignUp as amplifyConfirmSignUp,
   fetchAuthSession,
   fetchUserAttributes,
+  updateUserAttributes,
 } from 'aws-amplify/auth'
-import { setTokenProvider, setAuthErrorHandler } from '../utils/api'
+import { api, setTokenProvider, setAuthErrorHandler } from '../utils/api'
 import { DEMO_STORAGE_KEY, DEMO_USER, isDemoMode } from '../utils/demoData'
 
 Amplify.configure({
@@ -114,9 +115,41 @@ export function AuthProvider({ children }) {
     setUser(null)
   }
 
+  // Cognito's `name` attribute is the source of truth for new trips going
+  // forward; the backend call syncs the displayName already cached on every
+  // MEMBER# item for trips the user already belongs to, so the change is
+  // actually visible somewhere instead of silently doing nothing until the
+  // next trip. Demo mode has no real Cognito user, so it just updates the
+  // in-memory session — nothing to persist.
+  async function updateDisplayName(name) {
+    const trimmed = name.trim()
+    if (!trimmed) throw new Error('Name is required')
+
+    if (isDemoMode()) {
+      setUser((u) => (u ? { ...u, displayName: trimmed } : u))
+      return
+    }
+
+    await updateUserAttributes({ userAttributes: { name: trimmed } })
+    await api.patch('/me/displayName', { displayName: trimmed })
+    setUser((u) => (u ? { ...u, displayName: trimmed } : u))
+  }
+
   return (
     <AuthContext.Provider
-      value={{ user, isLoading, isDemo, setUser, getAccessToken, login, register, confirmRegistration, logout, enterDemo }}
+      value={{
+        user,
+        isLoading,
+        isDemo,
+        setUser,
+        getAccessToken,
+        login,
+        register,
+        confirmRegistration,
+        logout,
+        enterDemo,
+        updateDisplayName,
+      }}
     >
       {children}
     </AuthContext.Provider>

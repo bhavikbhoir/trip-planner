@@ -11,6 +11,7 @@ import Preferences from './pages/Preferences'
 import Itinerary from './pages/Itinerary'
 import DayOf from './pages/DayOf'
 import Expenses from './pages/Expenses'
+import Settings from './pages/Settings'
 
 function ProtectedRoute({ children }) {
   const { user, isLoading } = useAuth()
@@ -90,6 +91,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <Expenses />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <Settings />
             </ProtectedRoute>
           }
         />

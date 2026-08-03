@@ -330,8 +330,9 @@ function makeInitialStore() {
 let store = makeInitialStore()
 
 // Seeded so the notification bell has something to show in demo mode — real
-// notifications are fanned out server-side on POST /trips/:id/join, which
-// demo mode has no independent-actor model to simulate, so these are static.
+// notifications are fanned out server-side (on join, new suggestion, and
+// plan regeneration), which demo mode has no independent-actor model to
+// simulate, so these are static rather than dynamically generated.
 let notifications = [
   {
     notificationId: 'notif-1',
@@ -344,6 +345,24 @@ let notifications = [
   },
   {
     notificationId: 'notif-2',
+    tripId: 'demo-bali',
+    tripName: 'Bali w/ Crew',
+    type: 'suggestion_added',
+    actorDisplayName: 'Priya',
+    createdAt: '2026-07-21T09:00:00Z',
+    read: false,
+  },
+  {
+    notificationId: 'notif-3',
+    tripId: 'demo-bali',
+    tripName: 'Bali w/ Crew',
+    type: 'plan_generated',
+    actorDisplayName: 'Bhavik',
+    createdAt: '2026-07-20T10:00:00Z',
+    read: true,
+  },
+  {
+    notificationId: 'notif-4',
     tripId: 'demo-bali',
     tripName: 'Bali w/ Crew',
     type: 'member_joined',

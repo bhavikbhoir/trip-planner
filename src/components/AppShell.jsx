@@ -15,13 +15,29 @@ function timeAgo(iso) {
   return `${Math.round(hours / 24)}d ago`
 }
 
-// `type` is extensible — only 'member_joined' exists today, others fall back
-// to a generic label rather than rendering nothing.
+const NOTIF_ICONS = { member_joined: 'users', suggestion_added: 'chat', plan_generated: 'sparkle' }
+
+// `type` is extensible — unrecognized types fall back to a generic label and
+// icon rather than rendering nothing.
 function notificationLabel(n) {
   if (n.type === 'member_joined') {
     return (
       <>
         <b>{n.actorDisplayName}</b> joined <b>{n.tripName}</b>
+      </>
+    )
+  }
+  if (n.type === 'suggestion_added') {
+    return (
+      <>
+        <b>{n.actorDisplayName}</b> suggested a change on <b>{n.tripName}</b>
+      </>
+    )
+  }
+  if (n.type === 'plan_generated') {
+    return (
+      <>
+        <b>{n.actorDisplayName}</b> regenerated the plan for <b>{n.tripName}</b> — needs your approval
       </>
     )
   }
@@ -121,7 +137,7 @@ export default function AppShell({ actions, children }) {
                     onClick={() => handleSelect(n)}
                   >
                     <span className="notif-icon">
-                      <Icon name="users" />
+                      <Icon name={NOTIF_ICONS[n.type] || 'bell'} />
                     </span>
                     <span className="notif-text">
                       <span className="notif-label">{notificationLabel(n)}</span>
@@ -132,6 +148,9 @@ export default function AppShell({ actions, children }) {
               </div>
             )}
           </div>
+          <Link className="icon-btn" to="/settings" aria-label="Settings">
+            <Icon name="sliders" />
+          </Link>
           {actions}
         </div>
       </header>
