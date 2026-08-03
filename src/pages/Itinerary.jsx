@@ -37,6 +37,20 @@ function fmtDateTime(v) {
   return d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
 }
 
+// travelFromPrevious.drive is real OSRM road-network routing; walkMinutes is
+// a straight-line-distance estimate (the public OSRM demo server turned out
+// to only ever serve driving-network data — see trip-planner-api/shared/osrm.js)
+// so it's always phrased as an estimate, never presented as routed.
+function fmtTravel(t) {
+  if (!t) return null
+  const walk = `~${t.walkMinutes} min walk`
+  if (t.drive) {
+    const km = (t.drive.distanceMeters / 1000).toFixed(1)
+    return `${t.drive.durationMinutes} min drive (${km} km) or ${walk}`
+  }
+  return `${walk} (${t.straightLineMeters}m, straight-line estimate)`
+}
+
 export default function Itinerary() {
   const { tripId } = useParams()
   const navigate = useNavigate()
@@ -545,6 +559,13 @@ export default function Itinerary() {
                         <span className="event-cost mono">${ev.costPerPerson}/person</span>
                       )}
                     </div>
+                    {ev.travelFromPrevious && (
+                      <div className="osm-note">
+                        <Icon name="route" />
+                        {fmtTravel(ev.travelFromPrevious)}
+                      </div>
+                    )}
+                    {ev.transitEstimate && <div className="note">Transit: {ev.transitEstimate}</div>}
                     {ev.note && <div className="note">{ev.note}</div>}
                     {ev.openingHours && (
                       <div className="osm-note">

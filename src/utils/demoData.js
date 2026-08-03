@@ -205,6 +205,8 @@ function makeInitialStore() {
                   lng: 115.2617,
                   costPerPerson: 12,
                   timeToSpend: '1–1.5 hrs',
+                  // Real numbers from a live OSRM lookup on these exact coordinates.
+                  travelFromPrevious: { walkMinutes: 18, straightLineMeters: 1404, drive: { distanceMeters: 1823, durationMinutes: 3 } },
                   openingHours: '11:00-21:00 — OpenStreetMap listing for "Warung Sopa" nearby, verify it\'s the right venue',
                 },
               ],
