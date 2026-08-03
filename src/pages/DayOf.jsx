@@ -32,12 +32,25 @@ function todayIso() {
 
 // The one-job view: what's happening today, in order, nothing else. No
 // preferences, no suggestions, no version history — this exists for the
-// moment on the trip itself, not for planning it.
+// moment on the trip itself, not for planning it. Checking an event off
+// just marks it done; there's no sub-list, no notes — the trip is already
+// planned, this is just tracking what's actually happened so far today.
 export default function DayOf() {
   const { tripId } = useParams()
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
+
+  async function handleToggleDone(eventId, done) {
+    setData((d) => (d ? { ...d, events: d.events.map((ev) => (ev.eventId === eventId ? { ...ev, done } : ev)) } : d))
+    try {
+      if (done) await api.put(`/trips/${tripId}/events/${eventId}/done`)
+      else await api.delete(`/trips/${tripId}/events/${eventId}/done`)
+    } catch {
+      // Revert on failure
+      setData((d) => (d ? { ...d, events: d.events.map((ev) => (ev.eventId === eventId ? { ...ev, done: !done } : ev)) } : d))
+    }
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -124,9 +137,15 @@ export default function DayOf() {
             <StaggerContainer>
               <StaggerItem className="day-block">
                 {data.events.map((ev, j) => (
-                  <div className="event" key={j}>
+                  <label className={`event checkable${ev.done ? ' done' : ''}`} key={j}>
+                    <input
+                      type="checkbox"
+                      className="event-check"
+                      checked={!!ev.done}
+                      onChange={(e) => handleToggleDone(ev.eventId, e.target.checked)}
+                    />
                     <span className="event-node">
-                      <Icon name={EVENT_ICONS[ev.icon] || 'flag'} />
+                      <Icon name={ev.done ? 'check' : EVENT_ICONS[ev.icon] || 'flag'} />
                     </span>
                     <div className="event-body">
                       <div className="time mono">{ev.time}</div>
@@ -144,7 +163,7 @@ export default function DayOf() {
                       </div>
                       {ev.note && <div className="note">{ev.note}</div>}
                     </div>
-                  </div>
+                  </label>
                 ))}
               </StaggerItem>
             </StaggerContainer>

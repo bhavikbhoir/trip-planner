@@ -181,17 +181,18 @@ function makeInitialStore() {
             {
               date: 'Nov 14, Sat',
               events: [
-                { time: '9:40a', title: 'Sam arrives', icon: 'plane' },
-                { time: '1:15p', title: 'Priya arrives', icon: 'plane' },
-                { time: '3:00p', title: 'Check in — Ubud Jungle Villas', icon: 'hotel', lat: -8.5069, lng: 115.2625 },
-                { time: '6:00p', title: 'Dinner — Warung Sopa', icon: 'food', lat: -8.5195, lng: 115.2617, costPerPerson: 12, timeToSpend: '1–1.5 hrs' },
+                { eventId: 'ev-bali-1', time: '9:40a', title: 'Sam arrives', icon: 'plane' },
+                { eventId: 'ev-bali-2', time: '1:15p', title: 'Priya arrives', icon: 'plane' },
+                { eventId: 'ev-bali-3', time: '3:00p', title: 'Check in — Ubud Jungle Villas', icon: 'hotel', lat: -8.5069, lng: 115.2625 },
+                { eventId: 'ev-bali-4', time: '6:00p', title: 'Dinner — Warung Sopa', icon: 'food', lat: -8.5195, lng: 115.2617, costPerPerson: 12, timeToSpend: '1–1.5 hrs' },
               ],
             },
             {
               date: 'Nov 15, Sun',
               events: [
-                { time: '5:30a', title: 'Depart for Mt. Batur sunrise trek', icon: 'car' },
+                { eventId: 'ev-bali-5', time: '5:30a', title: 'Depart for Mt. Batur sunrise trek', icon: 'car' },
                 {
+                  eventId: 'ev-bali-6',
                   time: '9:00a',
                   title: 'Sunrise trek, Mt. Batur',
                   icon: 'activity',
@@ -228,6 +229,9 @@ function makeInitialStore() {
         { userId: DEMO_USER.userId, planVersion: 1, approvedAt: '2026-07-20T11:00:00Z' },
         { userId: 'sam', planVersion: 1, approvedAt: '2026-07-20T15:00:00Z' },
       ],
+      // Seeded so the day-of view has a realistic "trip in progress" look —
+      // Sam's arrival already checked off, the rest of today still pending.
+      doneEventIds: ['ev-bali-1'],
     },
     'demo-cabin': {
       trip: {
@@ -266,13 +270,13 @@ function makeInitialStore() {
             {
               date: 'Aug 21, Fri',
               events: [
-                { time: '4:00p', title: 'Check in — Aspen Ridge Cabin', icon: 'hotel' },
-                { time: '7:00p', title: 'Fireside dinner, in', icon: 'food' },
+                { eventId: 'ev-cabin-1', time: '4:00p', title: 'Check in — Aspen Ridge Cabin', icon: 'hotel' },
+                { eventId: 'ev-cabin-2', time: '7:00p', title: 'Fireside dinner, in', icon: 'food' },
               ],
             },
             {
               date: 'Aug 22, Sat',
-              events: [{ time: '8:30a', title: 'Hike — Maroon Bells', icon: 'activity' }],
+              events: [{ eventId: 'ev-cabin-3', time: '8:30a', title: 'Hike — Maroon Bells', icon: 'activity' }],
             },
           ],
         },
@@ -283,6 +287,7 @@ function makeInitialStore() {
         { userId: 'sam', planVersion: 1, approvedAt: '2026-07-09T12:00:00Z' },
         { userId: 'priya', planVersion: 1, approvedAt: '2026-07-09T18:00:00Z' },
       ],
+      doneEventIds: [],
     },
   }
 }
@@ -328,11 +333,15 @@ function tripSummary(t) {
   return { tripId, name, destination, startDate, endDate, status }
 }
 
+function newEventId() {
+  return `ev-${Math.random().toString(36).slice(2, 8)}`
+}
+
 function buildNextPlan(t) {
   const last = t.plans[t.plans.length - 1]
   if (!last) {
     return {
-      days: [{ date: t.trip.startDate, events: [{ time: '9:00a', title: `Arrive in ${t.trip.destination}`, icon: 'plane' }] }],
+      days: [{ date: t.trip.startDate, events: [{ eventId: newEventId(), time: '9:00a', title: `Arrive in ${t.trip.destination}`, icon: 'plane' }] }],
     }
   }
   const departures = t.logistics
@@ -343,10 +352,10 @@ function buildNextPlan(t) {
   const windDownDay = {
     date: t.trip.endDate,
     events: [
-      { time: '9:00a', title: 'Free morning — pack up and last-minute shopping', icon: 'other' },
+      { eventId: newEventId(), time: '9:00a', title: 'Free morning — pack up and last-minute shopping', icon: 'other' },
       lastDeparture
-        ? { time: 'later', title: `Departures begin (last flight ${lastDeparture.flight || ''})`, icon: 'plane' }
-        : { time: 'later', title: 'Head to the airport', icon: 'plane' },
+        ? { eventId: newEventId(), time: 'later', title: `Departures begin (last flight ${lastDeparture.flight || ''})`, icon: 'plane' }
+        : { eventId: newEventId(), time: 'later', title: 'Head to the airport', icon: 'plane' },
     ],
   }
   return { days: [...last.days, windDownDay] }
@@ -400,6 +409,7 @@ export async function demoRequest(method, path, body) {
         plans: [],
         suggestions: [],
         approvals: [],
+        doneEventIds: [],
       }
       return { trip }
     }
@@ -417,6 +427,7 @@ export async function demoRequest(method, path, body) {
         plans: t.plans,
         suggestions: t.suggestions || [],
         approvals: t.approvals || [],
+        eventCompletions: (t.doneEventIds || []).map((eventId) => ({ eventId })),
       }
     }
     if (method === 'DELETE') {
@@ -441,11 +452,15 @@ export async function demoRequest(method, path, body) {
       // back to the first day of the latest plan so the page has something
       // to show; an exact day.date match still wins if the caller passes it.
       const day = (latest?.days || []).find((d) => d.date === query.get('date')) || latest?.days?.[0] || null
+      const events = (day?.events || [])
+        .slice()
+        .sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time))
+        .map((ev) => ({ ...ev, done: (t.doneEventIds || []).includes(ev.eventId) }))
       return {
         date: day?.date || null,
         tripStatus: t.trip.status,
         planVersion: latest?.version || null,
-        events: (day?.events || []).slice().sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time)),
+        events,
         bookings: t.bookings,
       }
     }
@@ -564,6 +579,21 @@ export async function demoRequest(method, path, body) {
       const plan = { version: nextVersion, generatedAt: nowIso(), ...buildNextPlan(t) }
       t.plans.push(plan)
       return { plan }
+    }
+  }
+
+  // /trips/:tripId/events/:eventId/done
+  if (segments.length === 5 && segments[2] === 'events' && segments[4] === 'done') {
+    const t = getOr404(segments[1])
+    const eventId = segments[3]
+    t.doneEventIds = t.doneEventIds || []
+    if (method === 'PUT') {
+      if (!t.doneEventIds.includes(eventId)) t.doneEventIds.push(eventId)
+      return { done: true, eventId }
+    }
+    if (method === 'DELETE') {
+      t.doneEventIds = t.doneEventIds.filter((id) => id !== eventId)
+      return { done: false, eventId }
     }
   }
 

@@ -485,6 +485,35 @@
   margin-top: 4px;
 }
 
+// Day-of view only: an event row you can check off as done, in place of the
+// separate per-event sub-checklist this replaced — the trip is already
+// planned, this just tracks what's actually happened so far today. The
+// checkbox itself is visually hidden; the whole row is the tap target, and
+// the event-node icon becomes a checkmark when done.
+.event.checkable {
+  cursor: pointer;
+}
+
+.event-check {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.event.done {
+  .event-node {
+    background: var(--data);
+    border-color: var(--data);
+    color: var(--surface-solid);
+  }
+  .desc {
+    color: var(--ink-dim);
+    text-decoration: line-through;
+  }
+}
+
 .generating-panel {
   text-align: center;
   padding: 56px 24px;
