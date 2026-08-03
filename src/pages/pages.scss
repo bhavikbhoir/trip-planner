@@ -294,6 +294,45 @@
   gap: $space-sm;
 }
 
+// Navigation between the three trip views (Itinerary / Today / Expenses) —
+// deliberately separate from .itin-actions, which holds real actions
+// (Invite, Add booking, Regenerate, Delete). Mixing "go look at something
+// else" links into a row of verbs is what made that row cluttered.
+.trip-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: $space-lg;
+}
+
+.trip-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-size: $font-sm;
+  font-weight: 600;
+  color: var(--ink-dim);
+  border: 1px solid var(--surface-border);
+  background: var(--surface-solid);
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+
+  .icon {
+    width: 13px;
+    height: 13px;
+  }
+
+  &:hover {
+    color: var(--ink);
+  }
+
+  &.active {
+    background: var(--data);
+    border-color: var(--data);
+    color: var(--surface-solid);
+  }
+}
+
 .plan-badge {
   display: inline-flex;
   align-items: center;

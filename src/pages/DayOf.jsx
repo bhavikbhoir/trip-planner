@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { api } from '../utils/api'
 import AppShell from '../components/AppShell'
 import { Icon } from '../components/Icon'
 import { StaggerContainer, StaggerItem } from '../components/motion'
+import TripTabs from '../components/TripTabs'
 import './pages.scss'
 
 const HTTP_URL_RE = /^https?:\/\//i
@@ -73,14 +74,7 @@ export default function DayOf() {
   }, [tripId])
 
   return (
-    <AppShell
-      actions={
-        <Link className="btn ghost small" to={`/trip/${tripId}/itinerary`}>
-          <Icon name="route" />
-          Full itinerary
-        </Link>
-      }
-    >
+    <AppShell>
       <div className="itin-head">
         <div>
           <div className="eyebrow plan-badge">
@@ -90,6 +84,8 @@ export default function DayOf() {
           <h1 style={{ fontSize: '1.15rem', marginTop: 4 }}>{data?.date || todayIso()}</h1>
         </div>
       </div>
+
+      <TripTabs tripId={tripId} active="today" showToday />
 
       {loading && (
         <div className="panel glass" style={{ padding: 24 }}>

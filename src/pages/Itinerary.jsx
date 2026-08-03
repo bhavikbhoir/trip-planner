@@ -7,6 +7,7 @@ import { Icon } from '../components/Icon'
 import { StaggerContainer, StaggerItem } from '../components/motion'
 import BookingForm from '../components/BookingForm'
 import DayMap from '../components/DayMap'
+import TripTabs from '../components/TripTabs'
 import './pages.scss'
 
 const HTTP_URL_RE = /^https?:\/\//i
@@ -309,12 +310,6 @@ export default function Itinerary() {
           <h1 style={{ fontSize: '1.15rem', marginTop: latestPlan ? 4 : 0 }}>{trip ? trip.name : 'Loading…'}</h1>
         </div>
         <div className="itin-actions">
-          {latestPlan && (
-            <Link className="btn small ghost" to={`/trip/${tripId}/today`}>
-              <Icon name="sun" />
-              Today
-            </Link>
-          )}
           <button className="btn small ghost" type="button" onClick={handleCopyInvite}>
             <Icon name={linkCopied ? 'check' : 'link'} />
             {linkCopied ? 'Link copied' : 'Invite'}
@@ -337,6 +332,8 @@ export default function Itinerary() {
           )}
         </div>
       </div>
+
+      <TripTabs tripId={tripId} active="itinerary" showToday={!!latestPlan} />
 
       {confirmingExit && (
         <div className="confirm-banner">

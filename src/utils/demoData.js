@@ -232,6 +232,26 @@ function makeInitialStore() {
       // Seeded so the day-of view has a realistic "trip in progress" look —
       // Sam's arrival already checked off, the rest of today still pending.
       doneEventIds: ['ev-bali-1'],
+      expenses: [
+        {
+          expenseId: 'exp-1',
+          description: 'Dinner — Warung Sopa',
+          amount: 48,
+          paidBy: DEMO_USER.userId,
+          splitBetween: [DEMO_USER.userId, 'sam', 'priya', 'jordan'],
+          addedBy: DEMO_USER.userId,
+          createdAt: '2026-07-25T20:00:00Z',
+        },
+        {
+          expenseId: 'exp-2',
+          description: 'Airport taxi',
+          amount: 20,
+          paidBy: 'sam',
+          splitBetween: [DEMO_USER.userId, 'sam'],
+          addedBy: 'sam',
+          createdAt: '2026-07-25T10:00:00Z',
+        },
+      ],
     },
     'demo-cabin': {
       trip: {
@@ -288,6 +308,7 @@ function makeInitialStore() {
         { userId: 'priya', planVersion: 1, approvedAt: '2026-07-09T18:00:00Z' },
       ],
       doneEventIds: [],
+      expenses: [],
     },
   }
 }
@@ -410,6 +431,7 @@ export async function demoRequest(method, path, body) {
         suggestions: [],
         approvals: [],
         doneEventIds: [],
+        expenses: [],
       }
       return { trip }
     }
@@ -428,6 +450,7 @@ export async function demoRequest(method, path, body) {
         suggestions: t.suggestions || [],
         approvals: t.approvals || [],
         eventCompletions: (t.doneEventIds || []).map((eventId) => ({ eventId })),
+        expenses: t.expenses || [],
       }
     }
     if (method === 'DELETE') {
@@ -463,6 +486,21 @@ export async function demoRequest(method, path, body) {
         events,
         bookings: t.bookings,
       }
+    }
+    if (segments[2] === 'expenses' && method === 'POST') {
+      const memberIds = t.members.map((m) => m.userId)
+      const split = Array.isArray(body?.splitBetween) && body.splitBetween.length ? body.splitBetween : memberIds
+      const expense = {
+        expenseId: `exp-${Math.random().toString(36).slice(2, 8)}`,
+        description: body?.description || '',
+        amount: Number(body?.amount) || 0,
+        paidBy: body?.paidBy || DEMO_USER.userId,
+        splitBetween: split,
+        addedBy: DEMO_USER.userId,
+        createdAt: nowIso(),
+      }
+      t.expenses = [...(t.expenses || []), expense]
+      return { expense }
     }
     if (segments[2] === 'weather' && method === 'GET') {
       const cityGuess = (t.trip.destination || '').split(',')[0].trim() || t.trip.destination
@@ -571,6 +609,11 @@ export async function demoRequest(method, path, body) {
     if (segments[2] === 'bookings' && method === 'DELETE') {
       t.bookings = t.bookings.filter((b) => b.bookingId !== segments[3])
       return { ok: true }
+    }
+
+    if (segments[2] === 'expenses' && method === 'DELETE') {
+      t.expenses = (t.expenses || []).filter((e) => e.expenseId !== segments[3])
+      return { deleted: true, expenseId: segments[3] }
     }
 
     if (segments[2] === 'plan' && segments[3] === 'generate' && method === 'POST') {
