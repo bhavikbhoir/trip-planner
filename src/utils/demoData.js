@@ -16,6 +16,18 @@ const DEMO_WEATHER = {
   'demo-cabin': { temperature: 61, condition: 'clear sky', city: 'Aspen', icon: '01d' },
 }
 
+// Mock POST .../advisor/generate responses — there's no Bedrock to call in
+// demo mode, so these are hand-authored against demo-bali's actual seed data
+// (real names/times) rather than generic placeholder text, to look like a
+// genuine Haiku pass rather than a canned demo.
+const DEMO_TIPS = {
+  'demo-bali': [
+    { category: 'arrival_gap', text: "Jordan lands Nov 13 at 6:05p, almost a full day before Priya arrives Nov 14 at 1:15p — worth planning something low-key for Jordan's first evening solo." },
+    { category: 'departure_timing', text: 'Jordan departs Nov 20 at 8:30p, a day ahead of everyone else — make sure their last full day wraps early enough to pack and get to the airport.' },
+    { category: 'coverage_gap', text: "Priya listed a kid-friendly beach afternoon as a must-do, but the current plan doesn't have a dedicated beach day yet." },
+  ],
+}
+
 export function isDemoMode() {
   return typeof window !== 'undefined' && window.localStorage.getItem(DEMO_STORAGE_KEY) === '1'
 }
@@ -252,6 +264,7 @@ function makeInitialStore() {
           createdAt: '2026-07-25T10:00:00Z',
         },
       ],
+      tips: [],
     },
     'demo-cabin': {
       trip: {
@@ -309,6 +322,7 @@ function makeInitialStore() {
       ],
       doneEventIds: [],
       expenses: [],
+      tips: [],
     },
   }
 }
@@ -432,6 +446,7 @@ export async function demoRequest(method, path, body) {
         approvals: [],
         doneEventIds: [],
         expenses: [],
+        tips: [],
       }
       return { trip }
     }
@@ -451,6 +466,7 @@ export async function demoRequest(method, path, body) {
         approvals: t.approvals || [],
         eventCompletions: (t.doneEventIds || []).map((eventId) => ({ eventId })),
         expenses: t.expenses || [],
+        tips: t.tips || [],
       }
     }
     if (method === 'DELETE') {
@@ -622,6 +638,18 @@ export async function demoRequest(method, path, body) {
       const plan = { version: nextVersion, generatedAt: nowIso(), ...buildNextPlan(t) }
       t.plans.push(plan)
       return { plan }
+    }
+
+    if (segments[2] === 'advisor' && segments[3] === 'generate' && method === 'POST') {
+      await new Promise((resolve) => setTimeout(resolve, 700))
+      const proposed = DEMO_TIPS[t.trip.tripId] || []
+      t.tips = proposed.map((tip, i) => ({ tipId: `tip-${i}-${Math.random().toString(36).slice(2, 6)}`, ...tip }))
+      return { tips: t.tips }
+    }
+
+    if (segments[2] === 'advisor' && method === 'DELETE') {
+      t.tips = (t.tips || []).filter((tip) => tip.tipId !== segments[3])
+      return { deleted: true, tipId: segments[3] }
     }
   }
 

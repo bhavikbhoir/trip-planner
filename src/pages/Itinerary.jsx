@@ -22,6 +22,8 @@ const GENERATE_POLL_INTERVAL_MS = 3000
 const GENERATE_POLL_TIMEOUT_MS = 195000
 const EVENT_ICONS = { plane: 'plane', hotel: 'bed', car: 'car', food: 'fork', activity: 'mountain', other: 'flag' }
 const BOOKING_ICONS = { hotel: 'bed', car: 'car', other: 'flag' }
+const TIP_ICONS = { hotel_area: 'bed', arrival_gap: 'plane', departure_timing: 'clock', coverage_gap: 'sparkle' }
+const TIP_LABELS = { hotel_area: 'Hotel', arrival_gap: 'Arrival gap', departure_timing: 'Departure timing', coverage_gap: 'Coverage gap' }
 const BOOKING_LABELS = {
   hotel: ['check-in', 'check-out'],
   car: ['pickup', 'dropoff'],
@@ -47,6 +49,9 @@ export default function Itinerary() {
   const [plans, setPlans] = useState([])
   const [suggestions, setSuggestions] = useState([])
   const [approvals, setApprovals] = useState([])
+  const [tips, setTips] = useState([])
+  const [isGeneratingTips, setIsGeneratingTips] = useState(false)
+  const [tipsError, setTipsError] = useState('')
   const [weather, setWeather] = useState(null)
   const [loadError, setLoadError] = useState('')
 
@@ -92,6 +97,7 @@ export default function Itinerary() {
     setPlans(res.plans || [])
     setSuggestions(res.suggestions || [])
     setApprovals(res.approvals || [])
+    setTips(res.tips || [])
     return res
   }
 
@@ -215,6 +221,39 @@ export default function Itinerary() {
       setSuggestions((s) => s.filter((x) => x.suggestionId !== suggestionId))
     } catch (err) {
       setSuggestionError(err.message || 'Could not dismiss that suggestion.')
+    }
+  }
+
+  async function handleGenerateTips() {
+    setTipsError('')
+    setIsGeneratingTips(true)
+    try {
+      const res = await api.post(`/trips/${tripId}/advisor/generate`, {})
+      setTips(res.tips || [])
+    } catch (err) {
+      setTipsError(err.message || 'Could not get tips right now.')
+    } finally {
+      setIsGeneratingTips(false)
+    }
+  }
+
+  async function handleDismissTip(tipId) {
+    const prev = tips
+    setTips((t) => t.filter((x) => x.tipId !== tipId))
+    try {
+      await api.delete(`/trips/${tripId}/advisor/${tipId}`)
+    } catch {
+      setTips(prev)
+    }
+  }
+
+  async function handleTipToSuggestion(tip) {
+    try {
+      await api.post(`/trips/${tripId}/suggestions`, { text: tip.text, targetPlanVersion: latestPlan?.version })
+      await handleDismissTip(tip.tipId)
+      await loadTrip()
+    } catch (err) {
+      setTipsError(err.message || 'Could not add that as a suggestion.')
     }
   }
 
@@ -514,6 +553,48 @@ export default function Itinerary() {
             </StaggerItem>
           ))}
         </StaggerContainer>
+      )}
+
+      {!isGenerating && trip && (
+        <div className="panel glass">
+          <div className="section-title">
+            <h2>AI tips</h2>
+            <button className="btn small ghost" type="button" onClick={handleGenerateTips} disabled={isGeneratingTips}>
+              <Icon name="sparkle" />
+              {isGeneratingTips ? 'Thinking…' : tips.length ? 'Refresh tips' : 'Get AI tips'}
+            </button>
+          </div>
+
+          {tipsError && <div className="error-banner">{tipsError}</div>}
+
+          {tips.length === 0 && !isGeneratingTips && (
+            <p className="q-sub">
+              Quick, contextual suggestions based on your preferences, logistics, and current plan — hotel fit,
+              arrival gaps, tight departures, that kind of thing.
+            </p>
+          )}
+
+          {tips.map((tip) => (
+            <div className="suggestion" key={tip.tipId}>
+              <div className="who">
+                <Icon name={TIP_ICONS[tip.category] || 'sparkle'} />
+                {' '}
+                {TIP_LABELS[tip.category] || 'Tip'}
+              </div>
+              <div className="txt">{tip.text}</div>
+              <div className="acts">
+                <button className="btn small ghost" type="button" onClick={() => handleTipToSuggestion(tip)}>
+                  <Icon name="chat" />
+                  Add as suggestion
+                </button>
+                <button className="btn small ghost" type="button" onClick={() => handleDismissTip(tip.tipId)}>
+                  <Icon name="x" />
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
 
       {!isGenerating && latestPlan && (
