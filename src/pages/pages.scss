@@ -524,6 +524,26 @@
   margin-top: 4px;
 }
 
+// Grounded in real OpenStreetMap data (shared/overpass.js) rather than the
+// model's own prose — a distinct icon-prefixed line keeps that visually
+// separate from the freeform .note text above it, so it doesn't get read as
+// a claim the AI itself is making.
+.event .osm-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  font-size: $font-xs;
+  color: var(--data);
+  margin-top: 4px;
+
+  .icon {
+    width: 11px;
+    height: 11px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+}
+
 // Day-of view only: an event row you can check off as done, in place of the
 // separate per-event sub-checklist this replaced — the trip is already
 // planned, this just tracks what's actually happened so far today. The

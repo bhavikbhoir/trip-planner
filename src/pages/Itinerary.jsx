@@ -15,11 +15,11 @@ const HTTP_URL_RE = /^https?:\/\//i
 // path hit API Gateway's hard 29s ceiling) — POST just triggers it, and we poll
 // the trip until a new plan version (or a recorded error) shows up.
 const GENERATE_POLL_INTERVAL_MS = 3000
-// Must stay comfortably above the backend worker's own timeout (180s as of
+// Must stay comfortably above the backend worker's own timeout (240s as of
 // this writing — see trip-planner-api/serverless.yml's generateWorker) or a
 // slow-but-still-succeeding generation could show a false "taking longer
 // than expected" error moments before the real result lands.
-const GENERATE_POLL_TIMEOUT_MS = 195000
+const GENERATE_POLL_TIMEOUT_MS = 255000
 const EVENT_ICONS = { plane: 'plane', hotel: 'bed', car: 'car', food: 'fork', activity: 'mountain', other: 'flag' }
 const BOOKING_ICONS = { hotel: 'bed', car: 'car', other: 'flag' }
 const TIP_ICONS = { hotel_area: 'bed', arrival_gap: 'plane', departure_timing: 'clock', coverage_gap: 'sparkle' }
@@ -546,6 +546,18 @@ export default function Itinerary() {
                       )}
                     </div>
                     {ev.note && <div className="note">{ev.note}</div>}
+                    {ev.openingHours && (
+                      <div className="osm-note">
+                        <Icon name="clock" />
+                        {ev.openingHours}
+                      </div>
+                    )}
+                    {ev.nearbyParking && (
+                      <div className="osm-note">
+                        <Icon name="car" />
+                        Parking nearby: {ev.nearbyParking}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}

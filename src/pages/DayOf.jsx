@@ -158,6 +158,18 @@ export default function DayOf() {
                         )}
                       </div>
                       {ev.note && <div className="note">{ev.note}</div>}
+                      {ev.openingHours && (
+                        <div className="osm-note">
+                          <Icon name="clock" />
+                          {ev.openingHours}
+                        </div>
+                      )}
+                      {ev.nearbyParking && (
+                        <div className="osm-note">
+                          <Icon name="car" />
+                          Parking nearby: {ev.nearbyParking}
+                        </div>
+                      )}
                     </div>
                   </label>
                 ))}
