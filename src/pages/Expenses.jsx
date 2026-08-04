@@ -266,7 +266,12 @@ export default function Expenses() {
                         {exp.splitBetween.length === 1 ? '' : 's'}
                       </div>
                     </div>
-                    <button className="btn small ghost" type="button" onClick={() => handleDelete(exp.expenseId)}>
+                    <button
+                      className="btn small ghost"
+                      type="button"
+                      aria-label={`Delete expense: ${exp.description}`}
+                      onClick={() => handleDelete(exp.expenseId)}
+                    >
                       <Icon name="x" />
                     </button>
                   </div>

@@ -14,7 +14,12 @@ export default function TripTabs({ tripId, active, showToday }) {
   return (
     <div className="trip-tabs">
       {TABS.filter((t) => t.key !== 'today' || showToday).map((t) => (
-        <Link key={t.key} className={`trip-tab${active === t.key ? ' active' : ''}`} to={t.path(tripId)}>
+        <Link
+          key={t.key}
+          className={`trip-tab${active === t.key ? ' active' : ''}`}
+          to={t.path(tripId)}
+          aria-current={active === t.key ? 'page' : undefined}
+        >
           <Icon name={t.icon} />
           {t.label}
         </Link>

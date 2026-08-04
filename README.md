@@ -4,7 +4,7 @@ React + Vite frontend for a collaborative AI group trip planner. Companion backe
 
 ## Stack
 
-React 18 + Vite 6, Framer Motion, SCSS (token-based theming, light = paper boarding pass / dark = split-flap board), `react-router-dom`, AWS Amplify for Cognito auth, deployed to Firebase Hosting.
+React 18 + Vite 6, Framer Motion, SCSS (token-based theming, light = paper boarding pass / dark = split-flap board), `react-router-dom`, AWS Amplify for Cognito auth, Leaflet for maps, deployed to Firebase Hosting.
 
 ## Setup
 
@@ -22,15 +22,42 @@ VITE_COGNITO_CLIENT_ID=      # from trip-planner-api's deployed Cognito User Poo
 VITE_API_BASE=               # trip-planner-api's HTTP API base URL
 ```
 
-## What's here (Phase 1 + 2 of the build plan)
+No env vars are required just to click around — click "Try the demo" on the
+login screen for a fully seeded, backend-free walkthrough (see Demo mode
+below).
 
-- Auth: `Login`, `Register` (with email confirmation step) wired to Cognito via `src/contexts/AuthContext.jsx`
-- `src/utils/api.js` — bearer-token fetch wrapper, decoupled from React via `setTokenProvider`
-- `TripDashboard` (`GET /trips`), `CreateTrip` (`POST /trips`), `JoinTrip` (`GET/POST /trips/:id[/join]`)
-- `src/components/motion.jsx` — `Reveal` / `StaggerContainer` / `StaggerItem` Framer Motion primitives
-- MANIFEST design tokens in `src/styles/` — supports OS dark/light preference plus an explicit `data-theme` override
+## What's here
 
-Not yet built: trip detail/itinerary view, preferences questionnaire, bookings, AI advisor, suggestions/approvals — see the project plan for phases 3–7.
+- **Auth**: `Login`, `Register` (with email confirmation step) wired to Cognito via `src/contexts/AuthContext.jsx`; a settle-up-safe `next` redirect (`src/utils/safeNext.js`) so post-login redirects can't be hijacked by a crafted link.
+- **Trips**: `TripDashboard` (list), `CreateTrip`, `JoinTrip` (shareable invite link), `Preferences` (food/activities/budget/group dynamics/companions questionnaire).
+- **Itinerary** (`Itinerary.jsx`): AI-generated day-by-day plan with real grounded data (opening hours, parking, driving/walking travel times between stops), manual bookings shown as timeline anchors, suggestions + per-member approval tracking, an AI advisor tips panel (hotel-area fit, arrival gaps, tight departures, coverage gaps — dismissible, one-click "turn into a suggestion").
+- **Day-of view** (`DayOf.jsx`): today's events only, with a simple mark-done toggle per event for tracking progress while the trip is actually happening.
+- **Expenses** (`Expenses.jsx` + `src/utils/expenses.js`): log shared costs, automatic balance calculation and greedy debt-simplified "who owes who" settle-up.
+- **Settings** (`Settings.jsx`): update display name (syncs Cognito + every trip the user belongs to).
+- **Navigation**: `TripTabs.jsx` — Itinerary / Today / Expenses tab strip on every trip page; `AppShell.jsx` — global shell with a polling notification bell (member joined, suggestion added, plan regenerated) and a Settings link.
+- **Maps**: `DayMap.jsx` (Leaflet + OpenStreetMap tiles, no Google Maps billing), `PlaceAutocomplete.jsx`.
+- `src/utils/api.js` — bearer-token fetch wrapper, decoupled from React via `setTokenProvider`.
+- `src/components/motion.jsx` — `Reveal` / `StaggerContainer` / `StaggerItem` Framer Motion primitives.
+- MANIFEST design tokens in `src/styles/` — supports OS dark/light preference plus an explicit `data-theme` override.
+
+## Tests
+
+```bash
+npm run test   # vitest, run once (no watch)
+```
+
+Unit tests for the pure logic modules: expense balance/debt-simplification
+math (`src/utils/expenses.js`) and the open-redirect guard (`src/utils/safeNext.js`).
+Runs in CI on every push, before lint and build.
+
+## Demo mode
+
+`src/utils/demoData.js` + `enterDemo()` (`AuthContext.jsx`) run the entire
+app against seeded in-memory data — no Cognito, no backend, no AWS account
+needed. Every route (`/today`, `/expenses`, advisor tips, mark-done, etc.)
+has a matching demo handler in `demoRequest()`. This is the fastest way to
+see the whole app and is what's linked from the login screen for
+recruiters/visitors who don't want to create an account.
 
 ## Deploy
 
@@ -44,10 +71,10 @@ npm run deploy   # build + firebase deploy
 
 ### CI/CD
 
-`.github/workflows/deploy.yml` — push to `master` builds and deploys
-straight to the Firebase Hosting `live` channel (no separate dev/prod split
-on the frontend side, matching `the-gooners-world`'s pipeline — only merges
-trigger a deploy, not pull requests).
+`.github/workflows/deploy.yml` — push to `master` lints, tests, builds, and
+deploys straight to the Firebase Hosting `live` channel (no separate
+dev/prod split on the frontend side — only merges trigger a deploy, not pull
+requests).
 
 Required GitHub Actions secrets:
 
@@ -60,3 +87,11 @@ Required GitHub Actions secrets:
 
 `.firebaserc` must have the real Firebase project id committed (not the
 `REPLACE-ME` placeholder) before this workflow can deploy anywhere.
+
+## Status
+
+Full collaborative loop is live end-to-end: create a trip, invite a group,
+everyone submits preferences, AI generates a real-data-grounded itinerary,
+the group suggests changes and approves, day-of tracking and expense
+settle-up carry the trip through to the end. A starter unit test suite
+covers the pure logic; component-level testing is the next real gap.

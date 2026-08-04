@@ -291,6 +291,7 @@
 
 .itin-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: $space-sm;
 }
 

@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import AppShell from '../components/AppShell'
 import { Icon } from '../components/Icon'
+import { safeNextPath } from '../utils/safeNext'
 import './pages.scss'
 
 export default function Login() {
@@ -20,7 +21,7 @@ export default function Login() {
     setIsSubmitting(true)
     try {
       await login(email, password)
-      navigate(searchParams.get('next') || '/', { replace: true })
+      navigate(safeNextPath(searchParams.get('next')) || '/', { replace: true })
     } catch (err) {
       setError(err.message || 'Could not sign in — check your email and password.')
     } finally {
@@ -74,7 +75,7 @@ export default function Login() {
           </button>
           <p className="auth-switch">
             No account?{' '}
-            <Link to={searchParams.get('next') ? `/register?next=${encodeURIComponent(searchParams.get('next'))}` : '/register'}>
+            <Link to={safeNextPath(searchParams.get('next')) ? `/register?next=${encodeURIComponent(safeNextPath(searchParams.get('next')))}` : '/register'}>
               Create one
             </Link>
           </p>

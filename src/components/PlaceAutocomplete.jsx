@@ -111,13 +111,21 @@ export default function PlaceAutocomplete({ id, value, onChange, placeholder, re
           onChange={handleInputChange}
           onFocus={() => suggestions.length > 0 && setIsOpen(true)}
           onKeyDown={handleKeyDown}
+          role="combobox"
+          aria-expanded={isOpen && suggestions.length > 0}
+          aria-controls={`${id}-listbox`}
+          aria-autocomplete="list"
+          aria-activedescendant={activeIndex >= 0 ? `${id}-option-${activeIndex}` : undefined}
         />
       </div>
       {isOpen && suggestions.length > 0 && (
-        <ul className="autocomplete-list">
+        <ul className="autocomplete-list" id={`${id}-listbox`} role="listbox">
           {suggestions.map((place, i) => (
             <li
               key={place.id}
+              id={`${id}-option-${i}`}
+              role="option"
+              aria-selected={i === activeIndex}
               className={`autocomplete-item${i === activeIndex ? ' active' : ''}`}
               onMouseDown={(e) => {
                 e.preventDefault()

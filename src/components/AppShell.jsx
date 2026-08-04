@@ -53,7 +53,9 @@ export default function AppShell({ actions, children }) {
   const [notifications, setNotifications] = useState([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [isOpen, setIsOpen] = useState(false)
+  const [panelPos, setPanelPos] = useState(null)
   const wrapRef = useRef(null)
+  const bellRef = useRef(null)
 
   async function loadNotifications() {
     try {
@@ -69,7 +71,6 @@ export default function AppShell({ actions, children }) {
     loadNotifications()
     const id = setInterval(loadNotifications, POLL_MS)
     return () => clearInterval(id)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -83,6 +84,12 @@ export default function AppShell({ actions, children }) {
   async function handleToggle() {
     const next = !isOpen
     setIsOpen(next)
+    if (next && bellRef.current) {
+      const rect = bellRef.current.getBoundingClientRect()
+      const width = Math.min(320, window.innerWidth - 32)
+      const left = Math.max(16, Math.min(rect.right - width, window.innerWidth - width - 16))
+      setPanelPos({ top: rect.bottom + 8, left, width })
+    }
     if (next && unreadCount > 0) {
       setUnreadCount(0)
       setNotifications((list) => list.map((n) => ({ ...n, read: true })))
@@ -121,12 +128,23 @@ export default function AppShell({ actions, children }) {
             </span>
           )}
           <div className="notif-wrap" ref={wrapRef}>
-            <button type="button" className="icon-btn notif-bell" onClick={handleToggle} aria-label="Notifications">
+            <button
+              ref={bellRef}
+              type="button"
+              className="icon-btn notif-bell"
+              onClick={handleToggle}
+              aria-haspopup="true"
+              aria-expanded={isOpen}
+              aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
+            >
               <Icon name="bell" />
               {unreadCount > 0 && <span className="notif-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>}
             </button>
-            {isOpen && (
-              <div className="notif-panel">
+            {isOpen && panelPos && (
+              <div
+                className="notif-panel"
+                style={{ position: 'fixed', top: panelPos.top, left: panelPos.left, width: panelPos.width }}
+              >
                 <div className="notif-panel-head">Notifications</div>
                 {notifications.length === 0 && <div className="notif-empty">Nothing yet — invite some friends.</div>}
                 {notifications.map((n) => (

@@ -1,4 +1,4 @@
-import { MapContainer, TileLayer, Marker, Polyline } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 
@@ -28,14 +28,25 @@ export default function DayMap({ events }) {
 
   return (
     <div className="day-map glass">
-      <MapContainer center={center} zoom={12} scrollWheelZoom={false} style={{ height: 220, width: '100%' }}>
+      <p className="sr-only">
+        Map of {located.length} stop{located.length === 1 ? '' : 's'}: {located.map((e) => e.title).join(', ')}
+      </p>
+      <MapContainer
+        center={center}
+        zoom={12}
+        scrollWheelZoom={false}
+        style={{ height: 220, width: '100%' }}
+        aria-label="Interactive map"
+      >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         {positions.length > 1 && <Polyline positions={positions} pathOptions={{ color: '#157A9E', weight: 3, opacity: 0.7 }} />}
         {located.map((e, i) => (
-          <Marker key={i} position={[e.lat, e.lng]} icon={markerIcon} />
+          <Marker key={i} position={[e.lat, e.lng]} icon={markerIcon} alt={e.title || 'Trip stop'}>
+            <Popup>{e.title}</Popup>
+          </Marker>
         ))}
       </MapContainer>
     </div>
