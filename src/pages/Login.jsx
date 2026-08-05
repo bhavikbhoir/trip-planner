@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import AppShell from '../components/AppShell'
+import AuthPitch from '../components/AuthPitch'
 import { Icon } from '../components/Icon'
 import { safeNextPath } from '../utils/safeNext'
 import './pages.scss'
@@ -36,58 +37,61 @@ export default function Login() {
 
   return (
     <AppShell>
-      <div className="auth-shell">
-        <p className="eyebrow" style={{ marginBottom: 14 }}>
-          Sign in to your trips
-        </p>
-
-        <form className="panel glass auth-panel" onSubmit={handleSubmit}>
-          {error && <div className="error-banner">{error}</div>}
-          <div className="field">
-            <label htmlFor="email">Email</label>
-            <div className="field-input">
-              <input
-                id="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-          </div>
-          <div className="field">
-            <label htmlFor="password">Password</label>
-            <div className="field-input">
-              <input
-                id="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-          </div>
-          <button className="btn accent" type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Signing in…' : 'Sign in'}
-            <Icon name="plane" />
-          </button>
-          <p className="auth-switch">
-            No account?{' '}
-            <Link to={safeNextPath(searchParams.get('next')) ? `/register?next=${encodeURIComponent(safeNextPath(searchParams.get('next')))}` : '/register'}>
-              Create one
-            </Link>
+      <div className="auth-page">
+        <AuthPitch />
+        <div className="auth-shell">
+          <p className="eyebrow" style={{ marginBottom: 14 }}>
+            Sign in to your trips
           </p>
 
-          <div className="auth-divider">
-            <span>or</span>
-          </div>
-          <button className="btn ghost" type="button" onClick={handleDemo}>
-            <Icon name="sparkle" />
-            Try the demo — no account needed
-          </button>
-        </form>
+          <form className="panel glass auth-panel" onSubmit={handleSubmit}>
+            {error && <div className="error-banner">{error}</div>}
+            <div className="field">
+              <label htmlFor="email">Email</label>
+              <div className="field-input">
+                <input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="field">
+              <label htmlFor="password">Password</label>
+              <div className="field-input">
+                <input
+                  id="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </div>
+            </div>
+            <button className="btn accent" type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Signing in…' : 'Sign in'}
+              <Icon name="plane" />
+            </button>
+            <p className="auth-switch">
+              No account?{' '}
+              <Link to={safeNextPath(searchParams.get('next')) ? `/register?next=${encodeURIComponent(safeNextPath(searchParams.get('next')))}` : '/register'}>
+                Create one
+              </Link>
+            </p>
+
+            <div className="auth-divider">
+              <span>or</span>
+            </div>
+            <button className="btn ghost" type="button" onClick={handleDemo}>
+              <Icon name="sparkle" />
+              Try the demo — no account needed
+            </button>
+          </form>
+        </div>
       </div>
     </AppShell>
   )

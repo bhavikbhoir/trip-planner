@@ -1,10 +1,85 @@
 @use '../styles/variables' as *;
 @use '../styles/mixins' as *;
 
+.auth-page {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 48px;
+  align-items: center;
+  padding-top: 28px;
+
+  @include mobile {
+    grid-template-columns: 1fr;
+    gap: 30px;
+    padding-top: 4px;
+  }
+}
+
+.auth-pitch {
+  padding: 8px 0;
+
+  h1 {
+    font-size: clamp(1.5rem, 3vw, 2.05rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.16;
+    margin: 8px 0 12px;
+    text-wrap: balance;
+  }
+
+  .sub {
+    color: var(--ink-dim);
+    font-size: $font-md;
+    line-height: 1.55;
+    max-width: 46ch;
+    margin-bottom: 26px;
+  }
+}
+
+.pitch-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pitch-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+
+  .icon-badge {
+    width: 30px;
+    height: 30px;
+    border-radius: $radius-sm;
+    display: grid;
+    place-items: center;
+    background: color-mix(in srgb, var(--accent-1) 14%, transparent);
+    color: var(--accent-1);
+    flex-shrink: 0;
+
+    .icon {
+      width: 15px;
+      height: 15px;
+    }
+  }
+
+  .txt {
+    font-size: $font-sm;
+    color: var(--ink-dim);
+    line-height: 1.5;
+    padding-top: 5px;
+
+    b {
+      display: block;
+      font-size: $font-base;
+      color: var(--ink);
+      margin-bottom: 2px;
+    }
+  }
+}
+
 .auth-shell {
   max-width: 420px;
-  margin: 0 auto;
-  padding-top: 40px;
 }
 
 .auth-panel {
