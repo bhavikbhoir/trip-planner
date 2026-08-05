@@ -36,7 +36,7 @@ export default function Login() {
   }
 
   return (
-    <AppShell>
+    <AppShell minimal>
       <div className="auth-page">
         <AuthPitch />
         <div className="auth-shell">

@@ -49,7 +49,7 @@ export default function Register() {
   }
 
   return (
-    <AppShell>
+    <AppShell minimal>
       <div className="auth-page">
         <AuthPitch />
         <div className="auth-shell">

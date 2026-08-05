@@ -44,10 +44,14 @@ function notificationLabel(n) {
   return n.tripName
 }
 
-// Shared topbar (brand mark + notifications + optional page actions) for
-// every screen, authenticated or not. The ambient canvas + icon sprite mount
-// once at the App root, not here.
-export default function AppShell({ actions, children }) {
+// Shared topbar (brand mark + optional notifications/settings + page
+// actions). `minimal` is for Login/Register specifically — those pages are
+// "outside" the authenticated app, so they never show notifications or a
+// settings link, even if a demo session happens to still be active (e.g.
+// landing back on /login mid-demo via the back button). The demo-exit
+// badge is the one thing that still makes sense there, so it isn't gated
+// by `minimal`.
+export default function AppShell({ actions, children, minimal = false }) {
   const { isDemo, logout } = useAuth()
   const navigate = useNavigate()
   const [notifications, setNotifications] = useState([])
@@ -68,10 +72,11 @@ export default function AppShell({ actions, children }) {
   }
 
   useEffect(() => {
+    if (minimal) return
     loadNotifications()
     const id = setInterval(loadNotifications, POLL_MS)
     return () => clearInterval(id)
-  }, [])
+  }, [minimal])
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -127,48 +132,52 @@ export default function AppShell({ actions, children }) {
               Demo · <button type="button" onClick={handleExitDemo}>Exit</button>
             </span>
           )}
-          <div className="notif-wrap" ref={wrapRef}>
-            <button
-              ref={bellRef}
-              type="button"
-              className="icon-btn notif-bell"
-              onClick={handleToggle}
-              aria-haspopup="true"
-              aria-expanded={isOpen}
-              aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
-            >
-              <Icon name="bell" />
-              {unreadCount > 0 && <span className="notif-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>}
-            </button>
-            {isOpen && panelPos && (
-              <div
-                className="notif-panel"
-                style={{ position: 'fixed', top: panelPos.top, left: panelPos.left, width: panelPos.width }}
-              >
-                <div className="notif-panel-head">Notifications</div>
-                {notifications.length === 0 && <div className="notif-empty">Nothing yet — invite some friends.</div>}
-                {notifications.map((n) => (
-                  <button
-                    type="button"
-                    key={n.notificationId}
-                    className={`notif-item${n.read ? '' : ' unread'}`}
-                    onClick={() => handleSelect(n)}
+          {!minimal && (
+            <>
+              <div className="notif-wrap" ref={wrapRef}>
+                <button
+                  ref={bellRef}
+                  type="button"
+                  className="icon-btn notif-bell"
+                  onClick={handleToggle}
+                  aria-haspopup="true"
+                  aria-expanded={isOpen}
+                  aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
+                >
+                  <Icon name="bell" />
+                  {unreadCount > 0 && <span className="notif-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>}
+                </button>
+                {isOpen && panelPos && (
+                  <div
+                    className="notif-panel"
+                    style={{ position: 'fixed', top: panelPos.top, left: panelPos.left, width: panelPos.width }}
                   >
-                    <span className="notif-icon">
-                      <Icon name={NOTIF_ICONS[n.type] || 'bell'} />
-                    </span>
-                    <span className="notif-text">
-                      <span className="notif-label">{notificationLabel(n)}</span>
-                      <span className="notif-time">{timeAgo(n.createdAt)}</span>
-                    </span>
-                  </button>
-                ))}
+                    <div className="notif-panel-head">Notifications</div>
+                    {notifications.length === 0 && <div className="notif-empty">Nothing yet — invite some friends.</div>}
+                    {notifications.map((n) => (
+                      <button
+                        type="button"
+                        key={n.notificationId}
+                        className={`notif-item${n.read ? '' : ' unread'}`}
+                        onClick={() => handleSelect(n)}
+                      >
+                        <span className="notif-icon">
+                          <Icon name={NOTIF_ICONS[n.type] || 'bell'} />
+                        </span>
+                        <span className="notif-text">
+                          <span className="notif-label">{notificationLabel(n)}</span>
+                          <span className="notif-time">{timeAgo(n.createdAt)}</span>
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-          <Link className="icon-btn" to="/settings" aria-label="Settings">
-            <Icon name="sliders" />
-          </Link>
+              <Link className="icon-btn" to="/settings" aria-label="Settings">
+                <Icon name="sliders" />
+              </Link>
+            </>
+          )}
           {actions}
         </div>
       </header>
