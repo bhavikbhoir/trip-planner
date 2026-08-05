@@ -317,7 +317,7 @@ function makeInitialStore() {
               date: 'Aug 21, Fri',
               events: [
                 { eventId: 'ev-cabin-1', time: '4:00p', title: 'Check in — Aspen Ridge Cabin', icon: 'hotel' },
-                { eventId: 'ev-cabin-2', time: '7:00p', title: 'Fireside dinner, in', icon: 'food' },
+                { eventId: 'ev-cabin-2', time: '7:00p', title: 'Fireside dinner, in cabin', icon: 'food' },
               ],
             },
             {
