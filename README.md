@@ -35,10 +35,10 @@ below).
 - **Expenses** (`Expenses.jsx` + `src/utils/expenses.js`): log shared costs, automatic balance calculation and greedy debt-simplified "who owes who" settle-up.
 - **Settings** (`Settings.jsx`): update display name (syncs Cognito + every trip the user belongs to).
 - **Navigation**: `TripTabs.jsx` — Itinerary / Today / Expenses tab strip on every trip page; `AppShell.jsx` — global shell with a polling notification bell (member joined, suggestion added, plan regenerated) and a Settings link.
+- **Theme**: follows the OS/browser dark-light preference by default; the sun/moon toggle in the topbar (`src/utils/theme.js`) pins an explicit override to `localStorage` (applied before first paint via an inline script in `index.html`, so there's no flash of the wrong palette on reload) and, for a real account, syncs it to the backend (`GET/PATCH /me`) so the choice follows you to another device — demo mode stays local-only since there's no real account to sync to. Shown on every page, including logged-out ones.
 - **Maps**: `DayMap.jsx` (Leaflet + OpenStreetMap tiles, no Google Maps billing), `PlaceAutocomplete.jsx`.
 - `src/utils/api.js` — bearer-token fetch wrapper, decoupled from React via `setTokenProvider`.
 - `src/components/motion.jsx` — `Reveal` / `StaggerContainer` / `StaggerItem` Framer Motion primitives.
-- MANIFEST design tokens in `src/styles/` — supports OS dark/light preference plus an explicit `data-theme` override.
 
 ## Tests
 

@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>MANIFEST — Trip Planner</title>
+    <script>
+      // Applied before anything renders so a stored theme override doesn't
+      // flash the wrong palette for a frame — see src/utils/theme.js.
+      (function () {
+        var t = localStorage.getItem('manifest-theme')
+        if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t)
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

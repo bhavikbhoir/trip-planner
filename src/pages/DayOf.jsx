@@ -138,7 +138,7 @@ export default function DayOf() {
           )}
 
           {data.events.length === 0 ? (
-            <div className="empty-state">
+            <div className="panel glass empty-state">
               <Icon name="sun" />
               <p>Nothing on the plan for today.</p>
             </div>

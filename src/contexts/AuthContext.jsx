@@ -12,6 +12,7 @@ import {
 } from 'aws-amplify/auth'
 import { api, setTokenProvider, setAuthErrorHandler } from '../utils/api'
 import { DEMO_STORAGE_KEY, DEMO_USER, isDemoMode } from '../utils/demoData'
+import { setStoredTheme } from '../utils/theme'
 
 Amplify.configure({
   Auth: {
@@ -34,6 +35,18 @@ async function loadUserWithDisplayName() {
     // attributes unavailable — fall back below rather than fail sign-in
   }
   return { ...cognitoUser, displayName }
+}
+
+// The account's saved theme (if any) wins over whatever's currently applied
+// locally — local storage is just the fast, pre-login-aware guess. Silent
+// on failure: the local/system-preference theme still works fine either way.
+async function syncThemeFromAccount() {
+  try {
+    const res = await api.get('/me')
+    if (res.theme) setStoredTheme(res.theme)
+  } catch {
+    // best-effort
+  }
 }
 
 export function AuthProvider({ children }) {
@@ -74,7 +87,10 @@ export function AuthProvider({ children }) {
     }
 
     loadUserWithDisplayName()
-      .then((cognitoUser) => setUser(cognitoUser))
+      .then((cognitoUser) => {
+        setUser(cognitoUser)
+        syncThemeFromAccount()
+      })
       .catch(() => setUser(null))
       .finally(() => setIsLoading(false))
   }, [])
@@ -89,6 +105,7 @@ export function AuthProvider({ children }) {
     await amplifySignIn({ username: email, password })
     const cognitoUser = await loadUserWithDisplayName()
     setUser(cognitoUser)
+    syncThemeFromAccount()
     return cognitoUser
   }
 
@@ -135,6 +152,19 @@ export function AuthProvider({ children }) {
     setUser((u) => (u ? { ...u, displayName: trimmed } : u))
   }
 
+  // Applies immediately regardless of account type; the backend sync for a
+  // real account is best-effort in the background — a failed sync just means
+  // the choice doesn't follow to another device yet, not that it didn't work.
+  async function updateTheme(theme) {
+    setStoredTheme(theme)
+    if (isDemoMode()) return
+    try {
+      await api.patch('/me/theme', { theme })
+    } catch {
+      // best-effort
+    }
+  }
+
   return (
     <AuthContext.Provider
       value={{
@@ -149,6 +179,7 @@ export function AuthProvider({ children }) {
         logout,
         enterDemo,
         updateDisplayName,
+        updateTheme,
       }}
     >
       {children}

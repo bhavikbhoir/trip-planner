@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Icon } from './Icon'
 import { useAuth } from '../contexts/AuthContext'
 import { api } from '../utils/api'
+import { getEffectiveTheme, onThemeChange } from '../utils/theme'
 
 const POLL_MS = 40000
 
@@ -52,7 +53,7 @@ function notificationLabel(n) {
 // badge is the one thing that still makes sense there, so it isn't gated
 // by `minimal`.
 export default function AppShell({ actions, children, minimal = false }) {
-  const { isDemo, logout } = useAuth()
+  const { isDemo, logout, updateTheme } = useAuth()
   const navigate = useNavigate()
   const [notifications, setNotifications] = useState([])
   const [unreadCount, setUnreadCount] = useState(0)
@@ -60,6 +61,16 @@ export default function AppShell({ actions, children, minimal = false }) {
   const [panelPos, setPanelPos] = useState(null)
   const wrapRef = useRef(null)
   const bellRef = useRef(null)
+  const [theme, setTheme] = useState(getEffectiveTheme)
+
+  // Not just this button's own clicks — the account's saved theme can also
+  // arrive asynchronously after login (AuthContext syncs it against /me),
+  // which needs to update this already-mounted instance's icon too.
+  useEffect(() => onThemeChange(setTheme), [])
+
+  function handleToggleTheme() {
+    updateTheme(theme === 'dark' ? 'light' : 'dark')
+  }
 
   async function loadNotifications() {
     try {
@@ -132,6 +143,14 @@ export default function AppShell({ actions, children, minimal = false }) {
               Demo · <button type="button" onClick={handleExitDemo}>Exit</button>
             </span>
           )}
+          <button
+            type="button"
+            className="icon-btn"
+            onClick={handleToggleTheme}
+            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            <Icon name={theme === 'dark' ? 'sun' : 'moon'} />
+          </button>
           {!minimal && (
             <>
               <div className="notif-wrap" ref={wrapRef}>

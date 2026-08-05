@@ -244,7 +244,7 @@ export default function Expenses() {
           )}
 
           {expenses.length === 0 ? (
-            <div className="empty-state">
+            <div className="panel glass empty-state">
               <Icon name="wallet" />
               <p>No expenses logged yet.</p>
             </div>
