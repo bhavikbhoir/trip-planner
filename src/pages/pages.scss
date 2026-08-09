@@ -569,6 +569,147 @@
   align-items: flex-start;
 }
 
+// ── Restaurant alternatives (meal events only) ──────────────────────
+.alt-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 10px;
+  font: inherit;
+  font-size: $font-sm;
+  font-weight: 700;
+  color: var(--accent-1);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+
+  .chev {
+    width: 13px;
+    height: 13px;
+    transition: transform 0.2s ease;
+  }
+  &.open .chev {
+    transform: rotate(180deg);
+  }
+}
+
+.alt-list {
+  display: flex;
+  flex-direction: column;
+  gap: $space-sm;
+  margin-top: $space-md;
+}
+
+.alt-card {
+  display: flex;
+  align-items: center;
+  gap: $space-md;
+  padding: 10px 12px;
+  border-radius: $radius-md;
+  border: 1px solid var(--surface-border);
+  background: var(--surface-solid);
+  transition: border-color $transition, background $transition;
+
+  &.picked {
+    border-color: var(--success);
+    background: color-mix(in srgb, var(--success) 8%, var(--surface-solid));
+  }
+
+  .alt-badge {
+    width: 30px;
+    height: 30px;
+    border-radius: $radius-sm;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    background: color-mix(in srgb, var(--accent-1) 14%, transparent);
+    color: var(--accent-1);
+
+    .icon {
+      width: 15px;
+      height: 15px;
+    }
+  }
+  &.picked .alt-badge {
+    background: color-mix(in srgb, var(--success) 18%, transparent);
+    color: var(--success);
+  }
+
+  .alt-info {
+    flex: 1;
+    min-width: 0;
+  }
+  .alt-name {
+    font-size: $font-base;
+    font-weight: 600;
+  }
+  .alt-orig {
+    font-weight: 400;
+    font-size: $font-xs;
+    color: var(--ink-dim);
+  }
+  .alt-meta {
+    font-size: $font-xs;
+    color: var(--ink-dim);
+    margin-top: 2px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .alt-tag {
+    font-weight: 700;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--data) 14%, transparent);
+    color: var(--data);
+  }
+
+  .alt-action {
+    flex-shrink: 0;
+    font: inherit;
+    font-size: $font-xs;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 7px 13px;
+    border-radius: 999px;
+    border: 1px solid var(--surface-border);
+    background: transparent;
+    color: var(--ink);
+
+    &:hover {
+      border-color: var(--accent-1);
+      color: var(--accent-1);
+    }
+
+    &.picked {
+      border-color: transparent;
+      background: color-mix(in srgb, var(--success) 16%, transparent);
+      color: var(--success);
+      cursor: default;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+
+      .icon {
+        width: 12px;
+        height: 12px;
+      }
+    }
+  }
+}
+
+@include mobile {
+  .alt-card {
+    flex-wrap: wrap;
+
+    .alt-action {
+      width: 100%;
+    }
+  }
+}
+
 .event-node {
   position: absolute;
   left: -34px;

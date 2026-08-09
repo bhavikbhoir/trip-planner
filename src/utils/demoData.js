@@ -209,6 +209,10 @@ function makeInitialStore() {
                   // Real numbers from a live OSRM lookup on these exact coordinates.
                   travelFromPrevious: { walkMinutes: 18, straightLineMeters: 1404, drive: { distanceMeters: 1823, durationMinutes: 3 } },
                   openingHours: '11:00-21:00 — OpenStreetMap listing for "Warung Sopa" nearby, verify it\'s the right venue',
+                  alternatives: [
+                    { title: 'Zest Ubud', cuisine: 'Vegan · Mediterranean', note: 'Hilltop views, fully plant-based, a bit pricier.', costPerPerson: 16, lat: -8.4956, lng: 115.2543 },
+                    { title: 'Nasi Bali Men Weti', cuisine: 'Local · Street food', note: 'No-frills local favorite, cash only, midday queue.', costPerPerson: 6, lat: -8.5089, lng: 115.264 },
+                  ],
                 },
               ],
             },
@@ -498,6 +502,7 @@ export async function demoRequest(method, path, body) {
         suggestions: t.suggestions || [],
         approvals: t.approvals || [],
         eventCompletions: (t.doneEventIds || []).map((eventId) => ({ eventId })),
+        picks: t.picks || [],
         expenses: t.expenses || [],
         tips: t.tips || [],
       }
@@ -698,6 +703,22 @@ export async function demoRequest(method, path, body) {
     if (method === 'DELETE') {
       t.doneEventIds = t.doneEventIds.filter((id) => id !== eventId)
       return { done: false, eventId }
+    }
+  }
+
+  // /trips/:tripId/events/:eventId/pick
+  if (segments.length === 5 && segments[2] === 'events' && segments[4] === 'pick') {
+    const t = getOr404(segments[1])
+    const eventId = segments[3]
+    const latest = t.plans.reduce((a, b) => (b.version > a.version ? b : a))
+    t.picks = (t.picks || []).filter((p) => p.eventId !== eventId)
+    if (method === 'PUT') {
+      const pick = { eventId, chosenIndex: body.chosenIndex, planVersion: latest.version }
+      t.picks.push(pick)
+      return { pick }
+    }
+    if (method === 'DELETE') {
+      return { reverted: true, eventId }
     }
   }
 

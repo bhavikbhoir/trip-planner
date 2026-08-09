@@ -34,6 +34,7 @@ export function IconSprite() {
         <symbol id="icon-map" viewBox="0 0 24 24"><path d="M9 4 3 6.5v13L9 17l6 2.5 6-2.5v-13L15 6.5 9 4z" strokeLinejoin="round" /><path d="M9 4v13M15 6.5v13" /></symbol>
         <symbol id="icon-bell" viewBox="0 0 24 24"><path d="M6 9a6 6 0 1 1 12 0c0 3.5 1 5.5 2 7H4c1-1.5 2-3.5 2-7z" strokeLinejoin="round" /><path d="M9.5 19a2.5 2.5 0 0 0 5 0" /></symbol>
         <symbol id="icon-moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" strokeLinejoin="round" /></symbol>
+        <symbol id="icon-chevron" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" /></symbol>
       </defs>
     </svg>
   )

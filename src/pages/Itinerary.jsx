@@ -63,6 +63,8 @@ export default function Itinerary() {
   const [plans, setPlans] = useState([])
   const [suggestions, setSuggestions] = useState([])
   const [approvals, setApprovals] = useState([])
+  const [picks, setPicks] = useState([])
+  const [openAlts, setOpenAlts] = useState({})
   const [tips, setTips] = useState([])
   const [isGeneratingTips, setIsGeneratingTips] = useState(false)
   const [tipsError, setTipsError] = useState('')
@@ -111,6 +113,7 @@ export default function Itinerary() {
     setPlans(res.plans || [])
     setSuggestions(res.suggestions || [])
     setApprovals(res.approvals || [])
+    setPicks(res.picks || [])
     setTips(res.tips || [])
     return res
   }
@@ -328,6 +331,62 @@ export default function Itinerary() {
   }
 
   const latestPlan = plans.length ? plans.reduce((a, b) => (b.version > a.version ? b : a)) : null
+
+  // Only picks made against the current plan version apply — a regeneration
+  // bumps the version and reassigns eventIds, so older picks (from a prior
+  // proposal) simply never match, giving a clean slate each regeneration.
+  const pickByEvent = new Map(
+    picks.filter((p) => latestPlan && p.planVersion === latestPlan.version).map((p) => [p.eventId, p.chosenIndex])
+  )
+
+  // A meal event's full option set is [the AI's original pick, ...alternatives].
+  // `active` is whichever the group last chose (default 0). When a non-default
+  // option is active, its own fields stand in for the venue and the grounded
+  // OSM/route data — which described the original venue — is suppressed.
+  function resolveMeal(ev) {
+    const alternatives = ev.alternatives || []
+    if (!alternatives.length) return { ...ev, options: null }
+    const defaultOption = { title: ev.title, note: ev.note, costPerPerson: ev.costPerPerson, lat: ev.lat, lng: ev.lng }
+    const options = [defaultOption, ...alternatives]
+    const activeIndex = Math.min(pickByEvent.get(ev.eventId) ?? 0, options.length - 1)
+    const active = options[activeIndex]
+    const isDefault = activeIndex === 0
+    return {
+      ...ev,
+      title: active.title,
+      note: active.note,
+      costPerPerson: active.costPerPerson,
+      cuisine: active.cuisine,
+      lat: active.lat ?? ev.lat,
+      lng: active.lng ?? ev.lng,
+      openingHours: isDefault ? ev.openingHours : null,
+      nearbyParking: isDefault ? ev.nearbyParking : null,
+      travelFromPrevious: isDefault ? ev.travelFromPrevious : null,
+      options,
+      activeIndex,
+    }
+  }
+
+  async function handlePick(eventId, chosenIndex) {
+    if (!latestPlan) return
+    const prev = picks
+    const others = picks.filter((p) => p.eventId !== eventId)
+    const optimistic =
+      chosenIndex === 0
+        ? others
+        : [...others, { eventId, chosenIndex, planVersion: latestPlan.version }]
+    setPicks(optimistic)
+    try {
+      if (chosenIndex === 0) {
+        await api.delete(`/trips/${tripId}/events/${eventId}/pick`)
+      } else {
+        await api.put(`/trips/${tripId}/events/${eventId}/pick`, { chosenIndex, planVersion: latestPlan.version })
+      }
+    } catch {
+      setPicks(prev)
+    }
+  }
+
   const allCompanions = members.flatMap((m) => (m.companions || []).map((c) => ({ ...c, memberId: m.userId })))
   const hasAnchors = logistics.length > 0 || bookings.length > 0 || allCompanions.length > 0
 
@@ -561,7 +620,10 @@ export default function Itinerary() {
                 <span className="day-num">Day {i + 1}</span>
                 <span className="day-date mono">{day.date}</span>
               </div>
-              {day.events.map((ev, j) => (
+              {day.events.map((rawEv, j) => {
+                const ev = resolveMeal(rawEv)
+                const altOpen = openAlts[ev.eventId]
+                return (
                 <div className="event" key={j}>
                   <span className="event-node">
                     <Icon name={EVENT_ICONS[ev.icon] || 'flag'} />
@@ -600,10 +662,63 @@ export default function Itinerary() {
                         Parking nearby: {ev.nearbyParking}
                       </div>
                     )}
+
+                    {ev.options && (
+                      <>
+                        <button
+                          type="button"
+                          className={`alt-toggle${altOpen ? ' open' : ''}`}
+                          aria-expanded={!!altOpen}
+                          onClick={() => setOpenAlts((o) => ({ ...o, [ev.eventId]: !o[ev.eventId] }))}
+                        >
+                          Other options ({ev.options.length - 1})
+                          <Icon name="chevron" className="chev" />
+                        </button>
+                        {altOpen && (
+                          <div className="alt-list">
+                            {ev.options.map((opt, oi) => {
+                              const picked = oi === ev.activeIndex
+                              return (
+                                <div className={`alt-card${picked ? ' picked' : ''}`} key={oi}>
+                                  <span className="alt-badge">
+                                    <Icon name={picked ? 'check' : 'fork'} />
+                                  </span>
+                                  <div className="alt-info">
+                                    <div className="alt-name">
+                                      {opt.title}
+                                      {oi === 0 && <span className="alt-orig"> · AI pick</span>}
+                                    </div>
+                                    <div className="alt-meta">
+                                      {opt.cuisine && <span className="alt-tag">{opt.cuisine}</span>}
+                                      {opt.costPerPerson != null && <span className="mono">${opt.costPerPerson}/person</span>}
+                                    </div>
+                                  </div>
+                                  {picked ? (
+                                    <span className="alt-action picked">
+                                      <Icon name="check" />
+                                      In the plan
+                                    </span>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      className="alt-action"
+                                      onClick={() => handlePick(ev.eventId, oi)}
+                                    >
+                                      Use this
+                                    </button>
+                                  )}
+                                </div>
+                              )
+                            })}
+                          </div>
+                        )}
+                      </>
+                    )}
                   </div>
                 </div>
-              ))}
-              <DayMap events={day.events} />
+                )
+              })}
+              <DayMap events={day.events.map((e) => resolveMeal(e))} />
             </StaggerItem>
           ))}
         </StaggerContainer>
