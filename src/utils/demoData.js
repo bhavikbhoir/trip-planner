@@ -84,6 +84,7 @@ function makeInitialStore() {
           role: 'owner',
           preferences: {
             food: ['Local street food', 'Vegetarian-friendly'],
+            cuisines: ['Thai', 'Mediterranean'],
             activities: ['Hiking & nature', 'Beaches'],
             budgetPace: ['Mid-range', 'Relaxed pace'],
             groupDynamics: ['Ages 25–35', 'Mixed fitness levels'],

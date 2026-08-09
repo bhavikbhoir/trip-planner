@@ -449,6 +449,36 @@
       height: 14px;
     }
   }
+
+  // Booking rows only — pushed to the trailing edge, quiet until hovered so
+  // it doesn't compete with the row's real content (logistics rows, which
+  // aren't deletable here, simply don't render one).
+  .anchor-del {
+    margin-left: auto;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border-radius: $radius-sm;
+    border: none;
+    background: transparent;
+    color: var(--ink-dim);
+    cursor: pointer;
+    opacity: 0.5;
+    transition: opacity $transition-fast, color $transition-fast, background $transition-fast;
+
+    &:hover {
+      opacity: 1;
+      color: var(--warn);
+      background: color-mix(in srgb, var(--warn) 12%, transparent);
+    }
+
+    .icon {
+      width: 13px;
+      height: 13px;
+    }
+  }
 }
 
 .weather-chip {

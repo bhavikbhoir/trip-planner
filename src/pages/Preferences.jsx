@@ -12,6 +12,7 @@ const STEPS = ['food', 'activities', 'budgetPace', 'groupDynamics', 'likes', 'lo
 
 const OPTIONS = {
   food: ['Local street food', 'Fine dining', 'Vegetarian-friendly', 'Cafes & coffee', 'No seafood'],
+  cuisines: ['Italian', 'Japanese', 'Mexican', 'Indian', 'Thai', 'Mediterranean', 'Chinese', 'French', 'Korean', 'BBQ & grill', 'Seafood', 'Vegan'],
   activities: ['Hiking & nature', 'Museums & culture', 'Beaches', 'Nightlife', 'Shopping'],
   budgetPace: ['Budget', 'Mid-range', 'Splurge', 'Relaxed pace', 'Packed schedule'],
   groupDynamics: ['Ages 25–35', 'Traveling with kids', 'Mixed fitness levels', 'Early risers'],
@@ -52,6 +53,7 @@ export default function Preferences() {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const [food, setFood] = useState([])
+  const [cuisines, setCuisines] = useState([])
   const [activities, setActivities] = useState([])
   const [budgetPace, setBudgetPace] = useState([])
   const [groupDynamics, setGroupDynamics] = useState([])
@@ -73,6 +75,7 @@ export default function Preferences() {
         const mine = res.members?.find((m) => m.userId === user?.userId)
         if (mine?.preferences) {
           setFood(mine.preferences.food || [])
+          setCuisines(mine.preferences.cuisines || [])
           setActivities(mine.preferences.activities || [])
           setBudgetPace(mine.preferences.budgetPace || [])
           setGroupDynamics(mine.preferences.groupDynamics || [])
@@ -119,7 +122,7 @@ export default function Preferences() {
     setIsSubmitting(true)
     try {
       await api.patch(`/trips/${tripId}/members/me`, {
-        preferences: { food, activities, budgetPace, groupDynamics, dislikes, mustDo },
+        preferences: { food, cuisines, activities, budgetPace, groupDynamics, dislikes, mustDo },
         companions: companions.filter((c) => c.name.trim()),
       })
       if (arrivalFlight || arrivalTime || departureFlight || departureTime || transportMode) {
@@ -199,6 +202,13 @@ export default function Preferences() {
                 <div className="q-title">What are you into eating?</div>
                 <div className="q-sub">Pick as many as apply — this shapes where the AI books meals.</div>
                 <ChipGroup options={OPTIONS.food} selected={food} onToggle={(v) => setFood((f) => toggleValue(f, v))} />
+
+                <div className="q-sub" style={{ marginTop: 20 }}>Any cuisines you're craving? (optional)</div>
+                <ChipGroup
+                  options={OPTIONS.cuisines}
+                  selected={cuisines}
+                  onToggle={(v) => setCuisines((c) => toggleValue(c, v))}
+                />
               </>
             )}
 

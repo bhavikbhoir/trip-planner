@@ -195,6 +195,19 @@ export default function Itinerary() {
     setShowBookingForm(false)
   }
 
+  // Any trip member can remove any booking — if the group booked two hotels
+  // and settled on one, whoever's looking should be able to clear the other,
+  // not just whoever originally added it. Optimistic; reverts on failure.
+  async function handleBookingDeleted(bookingId) {
+    const prev = bookings
+    setBookings((b) => b.filter((x) => x.bookingId !== bookingId))
+    try {
+      await api.delete(`/trips/${tripId}/bookings/${bookingId}`)
+    } catch {
+      setBookings(prev)
+    }
+  }
+
   async function handleCopyInvite() {
     const url = `${window.location.origin}/trip/${tripId}/join`
     try {
@@ -489,6 +502,14 @@ export default function Itinerary() {
                     </>
                   )}
                 </span>
+                <button
+                  type="button"
+                  className="anchor-del"
+                  aria-label={`Remove booking: ${b.name}`}
+                  onClick={() => handleBookingDeleted(b.bookingId)}
+                >
+                  <Icon name="x" />
+                </button>
               </div>
             )
           })}
