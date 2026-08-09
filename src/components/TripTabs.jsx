@@ -4,6 +4,7 @@ import { Icon } from './Icon'
 const TABS = [
   { key: 'itinerary', label: 'Itinerary', icon: 'route', path: (tripId) => `/trip/${tripId}/itinerary` },
   { key: 'today', label: 'Today', icon: 'sun', path: (tripId) => `/trip/${tripId}/today` },
+  { key: 'bookings', label: 'Bookings', icon: 'bed', path: (tripId) => `/trip/${tripId}/bookings` },
   { key: 'expenses', label: 'Expenses', icon: 'wallet', path: (tripId) => `/trip/${tripId}/expenses` },
 ]
 

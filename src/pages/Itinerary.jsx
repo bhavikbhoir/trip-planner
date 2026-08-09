@@ -5,7 +5,6 @@ import { useAuth } from '../contexts/AuthContext'
 import AppShell from '../components/AppShell'
 import { Icon } from '../components/Icon'
 import { StaggerContainer, StaggerItem } from '../components/motion'
-import BookingForm from '../components/BookingForm'
 import DayMap from '../components/DayMap'
 import TripTabs from '../components/TripTabs'
 import './pages.scss'
@@ -73,7 +72,6 @@ export default function Itinerary() {
 
   const [isGenerating, setIsGenerating] = useState(false)
   const [generateError, setGenerateError] = useState('')
-  const [showBookingForm, setShowBookingForm] = useState(false)
   const [linkCopied, setLinkCopied] = useState(false)
 
   const [suggestionText, setSuggestionText] = useState('')
@@ -191,24 +189,6 @@ export default function Itinerary() {
     }
 
     poll()
-  }
-
-  function handleBookingCreated(booking) {
-    setBookings((b) => [...b, booking])
-    setShowBookingForm(false)
-  }
-
-  // Any trip member can remove any booking — if the group booked two hotels
-  // and settled on one, whoever's looking should be able to clear the other,
-  // not just whoever originally added it. Optimistic; reverts on failure.
-  async function handleBookingDeleted(bookingId) {
-    const prev = bookings
-    setBookings((b) => b.filter((x) => x.bookingId !== bookingId))
-    try {
-      await api.delete(`/trips/${tripId}/bookings/${bookingId}`)
-    } catch {
-      setBookings(prev)
-    }
   }
 
   async function handleCopyInvite() {
@@ -432,16 +412,12 @@ export default function Itinerary() {
               )}
             </div>
           )}
-          <h1 style={{ fontSize: '1.15rem', marginTop: latestPlan ? 4 : 0 }}>{trip ? trip.name : 'Loading…'}</h1>
+          <h1 className="page-title" style={{ marginTop: latestPlan ? 4 : 0 }}>{trip ? trip.name : 'Loading…'}</h1>
         </div>
         <div className="itin-actions">
           <button className="btn small ghost" type="button" onClick={handleCopyInvite}>
             <Icon name={linkCopied ? 'check' : 'link'} />
             {linkCopied ? 'Link copied' : 'Invite'}
-          </button>
-          <button className="btn small ghost" type="button" onClick={() => setShowBookingForm((s) => !s)}>
-            <Icon name="plus" />
-            {showBookingForm ? 'Cancel' : 'Add booking'}
           </button>
           {latestPlan && (
             <button className="btn small accent" type="button" onClick={handleGenerate} disabled={isGenerating}>
@@ -494,10 +470,6 @@ export default function Itinerary() {
             Retry
           </button>
         </div>
-      )}
-
-      {showBookingForm && (
-        <BookingForm tripId={tripId} onCreated={handleBookingCreated} onCancel={() => setShowBookingForm(false)} />
       )}
 
       {weather && (
@@ -561,14 +533,6 @@ export default function Itinerary() {
                     </>
                   )}
                 </span>
-                <button
-                  type="button"
-                  className="anchor-del"
-                  aria-label={`Remove booking: ${b.name}`}
-                  onClick={() => handleBookingDeleted(b.bookingId)}
-                >
-                  <Icon name="x" />
-                </button>
               </div>
             )
           })}

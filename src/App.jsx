@@ -10,6 +10,7 @@ import JoinTrip from './pages/JoinTrip'
 import Preferences from './pages/Preferences'
 import Itinerary from './pages/Itinerary'
 import DayOf from './pages/DayOf'
+import Bookings from './pages/Bookings'
 import Expenses from './pages/Expenses'
 import Settings from './pages/Settings'
 
@@ -83,6 +84,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <DayOf />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/trip/:tripId/bookings"
+          element={
+            <ProtectedRoute>
+              <Bookings />
             </ProtectedRoute>
           }
         />

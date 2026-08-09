@@ -364,6 +364,15 @@
   margin-bottom: $space-lg;
 }
 
+// The main title on every trip sub-page (Itinerary / Today / Bookings /
+// Expenses). One source on the type scale, so the four stay identical to
+// each other and match the weight of the app's other titles (.q-title,
+// .page-head h1) instead of each hardcoding an off-scale size inline.
+.page-title {
+  font-size: $font-xl;
+  font-weight: 800;
+}
+
 .itin-actions {
   display: flex;
   flex-wrap: wrap;
@@ -378,6 +387,15 @@
   display: flex;
   gap: 6px;
   margin-bottom: $space-lg;
+  // Scroll horizontally rather than overflow the viewport once there are
+  // enough tabs to exceed a narrow screen's width.
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 .trip-tab {
@@ -388,6 +406,8 @@
   border-radius: 999px;
   font-size: $font-sm;
   font-weight: 600;
+  flex-shrink: 0;
+  white-space: nowrap;
   color: var(--ink-dim);
   border: 1px solid var(--surface-border);
   background: var(--surface-solid);
@@ -449,34 +469,73 @@
       height: 14px;
     }
   }
+}
 
-  // Booking rows only — pushed to the trailing edge, quiet until hovered so
-  // it doesn't compete with the row's real content (logistics rows, which
-  // aren't deletable here, simply don't render one).
-  .anchor-del {
-    margin-left: auto;
-    flex-shrink: 0;
+// ── Bookings management tab ─────────────────────────────────────────
+.booking-row {
+  display: flex;
+  align-items: flex-start;
+  gap: $space-md;
+  padding: 16px 18px;
+  margin-bottom: 12px;
+
+  .icon-badge {
+    width: 34px;
+    height: 34px;
+    border-radius: $radius-sm;
     display: grid;
     place-items: center;
-    width: 26px;
-    height: 26px;
-    border-radius: $radius-sm;
-    border: none;
-    background: transparent;
-    color: var(--ink-dim);
-    cursor: pointer;
-    opacity: 0.5;
-    transition: opacity $transition-fast, color $transition-fast, background $transition-fast;
-
-    &:hover {
-      opacity: 1;
-      color: var(--warn);
-      background: color-mix(in srgb, var(--warn) 12%, transparent);
-    }
+    background: color-mix(in srgb, var(--data) 16%, transparent);
+    color: var(--data);
+    flex-shrink: 0;
 
     .icon {
-      width: 13px;
-      height: 13px;
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  .booking-info {
+    flex: 1;
+    min-width: 0;
+  }
+  .booking-name {
+    font-size: $font-md;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .booking-type {
+    font-size: $font-xs;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--ink-dim);
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--ink-dim) 14%, transparent);
+  }
+  .note .icon {
+    width: 11px;
+    height: 11px;
+    margin-right: 2px;
+  }
+
+  .booking-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  @include mobile {
+    flex-wrap: wrap;
+
+    .booking-actions {
+      width: 100%;
+      justify-content: flex-end;
     }
   }
 }

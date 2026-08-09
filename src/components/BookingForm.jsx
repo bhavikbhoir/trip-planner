@@ -2,9 +2,9 @@ import { useState } from 'react'
 import { api } from '../utils/api'
 import { Icon } from './Icon'
 
-// Add a manual hotel/car/other booking to a trip. Used from the Itinerary
-// page. Renders as a glass panel form; pass onCreated to react to a
-// successful POST.
+// Add or edit a manual hotel/car/other booking. Pass `booking` to edit an
+// existing one (pre-fills the form and PUTs instead of POSTs); omit it to
+// create. `onSaved` fires with the created/updated booking either way.
 const TYPES = [
   { value: 'hotel', label: 'Hotel', icon: 'bed' },
   { value: 'car', label: 'Car rental', icon: 'car' },
@@ -13,15 +13,23 @@ const TYPES = [
 
 const HTTP_URL_RE = /^https?:\/\//i
 
-export default function BookingForm({ tripId, onCreated, onCancel }) {
-  const [type, setType] = useState('hotel')
-  const [name, setName] = useState('')
-  const [location, setLocation] = useState('')
-  const [startDatetime, setStartDatetime] = useState('')
-  const [endDatetime, setEndDatetime] = useState('')
-  const [confirmation, setConfirmation] = useState('')
-  const [cost, setCost] = useState('')
-  const [referenceLink, setReferenceLink] = useState('')
+// datetime-local wants "YYYY-MM-DDTHH:mm"; stored values may carry seconds or
+// a zone, so trim to the minute for the input to populate correctly.
+function toLocalInput(v) {
+  if (!v) return ''
+  return String(v).slice(0, 16)
+}
+
+export default function BookingForm({ tripId, booking, onSaved, onCancel }) {
+  const isEdit = !!booking
+  const [type, setType] = useState(booking?.type || 'hotel')
+  const [name, setName] = useState(booking?.name || '')
+  const [location, setLocation] = useState(booking?.location || '')
+  const [startDatetime, setStartDatetime] = useState(toLocalInput(booking?.startDatetime))
+  const [endDatetime, setEndDatetime] = useState(toLocalInput(booking?.endDatetime))
+  const [confirmation, setConfirmation] = useState(booking?.confirmation || '')
+  const [cost, setCost] = useState(booking?.cost != null ? String(booking.cost) : '')
+  const [referenceLink, setReferenceLink] = useState(booking?.referenceLink || '')
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -34,20 +42,23 @@ export default function BookingForm({ tripId, onCreated, onCancel }) {
       return
     }
     setIsSubmitting(true)
+    const payload = {
+      type,
+      name,
+      location: location || undefined,
+      startDatetime,
+      endDatetime,
+      confirmation: confirmation || undefined,
+      cost: cost ? Number(cost) : undefined,
+      referenceLink: link || undefined,
+    }
     try {
-      const booking = await api.post(`/trips/${tripId}/bookings`, {
-        type,
-        name,
-        location: location || undefined,
-        startDatetime,
-        endDatetime,
-        confirmation: confirmation || undefined,
-        cost: cost ? Number(cost) : undefined,
-        referenceLink: referenceLink.trim() || undefined,
-      })
-      onCreated?.(booking.booking)
+      const res = isEdit
+        ? await api.put(`/trips/${tripId}/bookings/${booking.bookingId}`, payload)
+        : await api.post(`/trips/${tripId}/bookings`, payload)
+      onSaved?.(res.booking)
     } catch (err) {
-      setError(err.message || 'Could not add this booking.')
+      setError(err.message || `Could not ${isEdit ? 'save' : 'add'} this booking.`)
     } finally {
       setIsSubmitting(false)
     }
@@ -166,8 +177,8 @@ export default function BookingForm({ tripId, onCreated, onCancel }) {
           </button>
         )}
         <button type="submit" className="btn accent" disabled={isSubmitting}>
-          {isSubmitting ? 'Adding…' : 'Add booking'}
-          <Icon name="plus" />
+          {isSubmitting ? 'Saving…' : isEdit ? 'Save changes' : 'Add booking'}
+          <Icon name={isEdit ? 'check' : 'plus'} />
         </button>
       </div>
     </form>

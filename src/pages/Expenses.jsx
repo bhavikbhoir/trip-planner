@@ -110,7 +110,7 @@ export default function Expenses() {
             <Icon name="wallet" />
             Expenses
           </div>
-          <h1 style={{ fontSize: '1.15rem', marginTop: 4 }}>{trip?.name || 'Loading…'}</h1>
+          <h1 className="page-title" style={{ marginTop: 4 }}>{trip?.name || 'Loading…'}</h1>
         </div>
         <div className="itin-actions">
           <button className="btn small accent" type="button" onClick={() => setShowForm((s) => !s)}>

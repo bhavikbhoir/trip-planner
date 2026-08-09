@@ -94,7 +94,7 @@ export default function DayOf() {
             <Icon name="sun" />
             Today
           </div>
-          <h1 style={{ fontSize: '1.15rem', marginTop: 4 }}>{data?.date || todayIso()}</h1>
+          <h1 className="page-title" style={{ marginTop: 4 }}>{data?.date || todayIso()}</h1>
         </div>
       </div>
 

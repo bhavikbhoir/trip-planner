@@ -665,6 +665,25 @@ export async function demoRequest(method, path, body) {
       return { ok: true }
     }
 
+    if (segments[2] === 'bookings' && method === 'PUT') {
+      const bookingId = segments[3]
+      const idx = t.bookings.findIndex((b) => b.bookingId === bookingId)
+      if (idx < 0) throw badRequest('Booking not found')
+      const updated = {
+        ...t.bookings[idx],
+        type: body.type,
+        name: body.name,
+        location: body.location || null,
+        startDatetime: body.startDatetime,
+        endDatetime: body.endDatetime,
+        confirmation: body.confirmation || null,
+        cost: body.cost ?? null,
+        referenceLink: body.referenceLink || null,
+      }
+      t.bookings[idx] = updated
+      return { booking: updated }
+    }
+
     if (segments[2] === 'expenses' && method === 'DELETE') {
       t.expenses = (t.expenses || []).filter((e) => e.expenseId !== segments[3])
       return { deleted: true, expenseId: segments[3] }
