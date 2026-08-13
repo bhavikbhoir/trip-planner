@@ -512,6 +512,18 @@ export async function demoRequest(method, path, body) {
       delete store[segments[1]]
       return { deleted: true, tripId: segments[1] }
     }
+    if (method === 'PUT') {
+      if (t.trip.ownerId !== DEMO_USER.userId) throw forbidden('Only the trip owner can edit trip details')
+      t.trip = {
+        ...t.trip,
+        name: body.name,
+        destination: body.destination,
+        startDate: body.startDate,
+        endDate: body.endDate,
+        tripType: body.tripType || null,
+      }
+      return { trip: t.trip }
+    }
   }
 
   // /trips/:tripId/join, /trips/:tripId/bookings, /trips/:tripId/suggestions, /trips/:tripId/finalize, /trips/:tripId/weather, /trips/:tripId/preview

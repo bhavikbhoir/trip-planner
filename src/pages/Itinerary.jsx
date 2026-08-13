@@ -7,6 +7,7 @@ import { Icon } from '../components/Icon'
 import { StaggerContainer, StaggerItem } from '../components/motion'
 import DayMap from '../components/DayMap'
 import TripTabs from '../components/TripTabs'
+import EditTripForm from '../components/EditTripForm'
 import './pages.scss'
 
 const HTTP_URL_RE = /^https?:\/\//i
@@ -73,6 +74,7 @@ export default function Itinerary() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [generateError, setGenerateError] = useState('')
   const [linkCopied, setLinkCopied] = useState(false)
+  const [showEditTrip, setShowEditTrip] = useState(false)
 
   const [suggestionText, setSuggestionText] = useState('')
   const [isAddingSuggestion, setIsAddingSuggestion] = useState(false)
@@ -419,6 +421,12 @@ export default function Itinerary() {
             <Icon name={linkCopied ? 'check' : 'link'} />
             {linkCopied ? 'Link copied' : 'Invite'}
           </button>
+          {isOwner && (
+            <button className="btn small ghost" type="button" onClick={() => setShowEditTrip((s) => !s)}>
+              <Icon name="sliders" />
+              {showEditTrip ? 'Cancel' : 'Edit trip'}
+            </button>
+          )}
           {latestPlan && (
             <button className="btn small accent" type="button" onClick={handleGenerate} disabled={isGenerating}>
               <Icon name="refresh" />
@@ -435,6 +443,20 @@ export default function Itinerary() {
       </div>
 
       <TripTabs tripId={tripId} active="itinerary" showToday={!!latestPlan} />
+
+      {showEditTrip && trip && (
+        <div style={{ marginBottom: 16 }}>
+          <EditTripForm
+            tripId={tripId}
+            trip={trip}
+            onSaved={(updated) => {
+              setTrip(updated)
+              setShowEditTrip(false)
+            }}
+            onCancel={() => setShowEditTrip(false)}
+          />
+        </div>
+      )}
 
       {confirmingExit && (
         <div className="confirm-banner">
