@@ -35,6 +35,12 @@ export default function Expenses() {
     return members.find((m) => m.userId === userId)?.displayName || 'A traveler'
   }
 
+  // See Itinerary.jsx — memberLabel resolving to "You" breaks subject-verb
+  // agreement against a third-person verb ("You owes", "You is owed").
+  function verbFor(userId, thirdPerson, secondPerson) {
+    return userId === user?.userId ? secondPerson : thirdPerson
+  }
+
   async function loadTrip() {
     const res = await api.get(`/trips/${tripId}`)
     setTrip(res.trip)
@@ -218,7 +224,11 @@ export default function Expenses() {
                   </span>
                   <span>
                     {memberLabel(m.userId)} —{' '}
-                    {settled ? 'settled up' : net > 0 ? `is owed ${fmtMoney(net)}` : `owes ${fmtMoney(net)}`}
+                    {settled
+                      ? 'settled up'
+                      : net > 0
+                        ? `${verbFor(m.userId, 'is', 'are')} owed ${fmtMoney(net)}`
+                        : `${verbFor(m.userId, 'owes', 'owe')} ${fmtMoney(net)}`}
                   </span>
                 </div>
               )
@@ -236,7 +246,7 @@ export default function Expenses() {
                     <Icon name="wallet" />
                   </span>
                   <span>
-                    {memberLabel(t.from)} owes {memberLabel(t.to)} {fmtMoney(t.amount)}
+                    {memberLabel(t.from)} {verbFor(t.from, 'owes', 'owe')} {memberLabel(t.to)} {fmtMoney(t.amount)}
                   </span>
                 </div>
               ))}

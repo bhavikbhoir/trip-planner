@@ -211,6 +211,14 @@ export default function Itinerary() {
     return m?.displayName || 'A traveler'
   }
 
+  // memberLabel resolves the current user to "You", which breaks
+  // subject-verb agreement against a third-person verb ("You arrives") —
+  // this picks the grammatically correct form depending on who the subject
+  // actually is.
+  function verbFor(userId, thirdPerson, secondPerson) {
+    return userId === user?.userId ? secondPerson : thirdPerson
+  }
+
   async function handleAddSuggestion(e) {
     e.preventDefault()
     if (!suggestionText.trim() || !latestPlan) return
@@ -514,8 +522,18 @@ export default function Itinerary() {
                 </span>
                 <span>
                   {memberLabel(l.userId)}
-                  {l.arrival?.datetime && <> arrives {fmtDateTime(l.arrival.datetime)}</>}
-                  {l.departure?.datetime && <> · departs {fmtDateTime(l.departure.datetime)}</>}
+                  {l.arrival?.datetime && (
+                    <>
+                      {' '}
+                      {verbFor(l.userId, 'arrives', 'arrive')} {fmtDateTime(l.arrival.datetime)}
+                    </>
+                  )}
+                  {l.departure?.datetime && (
+                    <>
+                      {' · '}
+                      {verbFor(l.userId, 'departs', 'depart')} {fmtDateTime(l.departure.datetime)}
+                    </>
+                  )}
                 </span>
               </div>
             ))}
@@ -529,8 +547,8 @@ export default function Itinerary() {
                 </span>
                 <span>
                   {l.transportMode === 'driving'
-                    ? `${memberLabel(l.userId)} is driving${l.seatsAvailable ? ` — ${l.seatsAvailable} seat${l.seatsAvailable === 1 ? '' : 's'} free` : ''}`
-                    : `${memberLabel(l.userId)} needs a ride`}
+                    ? `${memberLabel(l.userId)} ${verbFor(l.userId, 'is', 'are')} driving${l.seatsAvailable ? ` — ${l.seatsAvailable} seat${l.seatsAvailable === 1 ? '' : 's'} free` : ''}`
+                    : `${memberLabel(l.userId)} ${verbFor(l.userId, 'needs', 'need')} a ride`}
                 </span>
               </div>
             ))}
