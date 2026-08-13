@@ -71,6 +71,9 @@ export default function Login() {
                   onChange={(e) => setPassword(e.target.value)}
                 />
               </div>
+              <Link to="/forgot-password" className="auth-forgot-link">
+                Forgot password?
+              </Link>
             </div>
             <button className="btn accent" type="submit" disabled={isSubmitting}>
               {isSubmitting ? 'Signing in…' : 'Sign in'}

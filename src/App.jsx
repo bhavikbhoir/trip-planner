@@ -4,6 +4,7 @@ import { IconSprite } from './components/Icon'
 import AmbientBackground from './components/AmbientBackground'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import ForgotPassword from './pages/ForgotPassword'
 import TripDashboard from './pages/TripDashboard'
 import CreateTrip from './pages/CreateTrip'
 import JoinTrip from './pages/JoinTrip'
@@ -39,6 +40,7 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route
           path="/"
           element={
