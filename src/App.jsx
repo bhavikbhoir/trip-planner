@@ -12,6 +12,7 @@ import Itinerary from './pages/Itinerary'
 import DayOf from './pages/DayOf'
 import Bookings from './pages/Bookings'
 import Expenses from './pages/Expenses'
+import Recap from './pages/Recap'
 import Settings from './pages/Settings'
 
 function ProtectedRoute({ children }) {
@@ -100,6 +101,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <Expenses />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/trip/:tripId/recap"
+          element={
+            <ProtectedRoute>
+              <Recap />
             </ProtectedRoute>
           }
         />

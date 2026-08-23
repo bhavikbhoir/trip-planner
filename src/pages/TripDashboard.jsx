@@ -5,7 +5,18 @@ import { useAuth } from '../contexts/AuthContext'
 import { StaggerContainer, StaggerItem } from '../components/motion'
 import AppShell from '../components/AppShell'
 import { Icon } from '../components/Icon'
+import { tripPhase } from '../utils/tripPhase'
 import './pages.scss'
+
+// Status pill priority: completed (the trip already happened) beats
+// finalized (the plan is locked) beats planning — completedAt and
+// trip.status are independent facts (see tripPhase.js), but the card only
+// has room for one badge, so show whichever is furthest along.
+function statusBadge(trip) {
+  if (tripPhase(trip) === 'completed') return { label: 'Completed', cls: 'final' }
+  if (trip.status === 'finalized') return { label: 'Finalized', cls: 'final' }
+  return { label: 'Planning', cls: 'planning' }
+}
 
 export default function TripDashboard() {
   const { logout } = useAuth()
@@ -56,30 +67,36 @@ export default function TripDashboard() {
 
       {trips && trips.length > 0 && (
         <StaggerContainer className="trip-grid">
-          {trips.map((trip) => (
-            <StaggerItem key={trip.tripId}>
-              <Link className="trip-card" to={`/trip/${trip.tripId}/itinerary`}>
-                <div className="trip-meta">
-                  <Icon name="pin" />
-                  {trip.destination}
-                </div>
-                <div className="trip-dest">{trip.name}</div>
-                <div className="trip-meta">
-                  <Icon name="calendar" />
-                  <span className="mono">
-                    {trip.startDate} – {trip.endDate}
-                  </span>
-                </div>
-                <div className="trip-foot">
-                  <span className="eyebrow">View itinerary →</span>
-                  <span className={`status-pill ${trip.status === 'finalized' ? 'final' : 'planning'}`}>
-                    <span className="dot" />
-                    {trip.status === 'finalized' ? 'Finalized' : 'Planning'}
-                  </span>
-                </div>
-              </Link>
-            </StaggerItem>
-          ))}
+          {trips.map((trip) => {
+            const badge = statusBadge(trip)
+            return (
+              <StaggerItem key={trip.tripId}>
+                <Link
+                  className="trip-card"
+                  to={`/trip/${trip.tripId}/${trip.completedAt ? 'recap' : 'itinerary'}`}
+                >
+                  <div className="trip-meta">
+                    <Icon name="pin" />
+                    {trip.destination}
+                  </div>
+                  <div className="trip-dest">{trip.name}</div>
+                  <div className="trip-meta">
+                    <Icon name="calendar" />
+                    <span className="mono">
+                      {trip.startDate} – {trip.endDate}
+                    </span>
+                  </div>
+                  <div className="trip-foot">
+                    <span className="eyebrow">{trip.completedAt ? 'View recap →' : 'View itinerary →'}</span>
+                    <span className={`status-pill ${badge.cls}`}>
+                      <span className="dot" />
+                      {badge.label}
+                    </span>
+                  </div>
+                </Link>
+              </StaggerItem>
+            )
+          })}
           <StaggerItem>
             <Link className="trip-new" to="/trips/new">
               <Icon name="plus" />

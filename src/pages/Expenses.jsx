@@ -126,7 +126,7 @@ export default function Expenses() {
         </div>
       </div>
 
-      <TripTabs tripId={tripId} active="expenses" showToday />
+      <TripTabs tripId={tripId} active="expenses" showToday showRecap={!!trip?.completedAt} />
 
       {loading && (
         <div className="panel glass" style={{ padding: 24 }}>

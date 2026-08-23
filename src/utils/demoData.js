@@ -192,7 +192,7 @@ function makeInitialStore() {
           generatedAt: '2026-07-20T10:00:00Z',
           days: [
             {
-              date: 'Nov 14, Sat',
+              date: '2026-11-14',
               events: [
                 { eventId: 'ev-bali-1', time: '9:40a', title: 'Sam arrives', icon: 'plane' },
                 { eventId: 'ev-bali-2', time: '1:15p', title: 'Priya arrives', icon: 'plane' },
@@ -217,7 +217,7 @@ function makeInitialStore() {
               ],
             },
             {
-              date: 'Nov 15, Sun',
+              date: '2026-11-15',
               events: [
                 { eventId: 'ev-bali-5', time: '5:30a', title: 'Depart for Mt. Batur sunrise trek', icon: 'car' },
                 {
@@ -319,14 +319,14 @@ function makeInitialStore() {
           generatedAt: '2026-07-10T09:00:00Z',
           days: [
             {
-              date: 'Aug 21, Fri',
+              date: '2026-08-21',
               events: [
                 { eventId: 'ev-cabin-1', time: '4:00p', title: 'Check in — Aspen Ridge Cabin', icon: 'hotel' },
                 { eventId: 'ev-cabin-2', time: '7:00p', title: 'Fireside dinner, in cabin', icon: 'food' },
               ],
             },
             {
-              date: 'Aug 22, Sat',
+              date: '2026-08-22',
               events: [{ eventId: 'ev-cabin-3', time: '8:30a', title: 'Hike — Maroon Bells', icon: 'activity' }],
             },
           ],
@@ -401,8 +401,8 @@ function getOr404(tripId) {
 }
 
 function tripSummary(t) {
-  const { tripId, name, destination, startDate, endDate, status } = t.trip
-  return { tripId, name, destination, startDate, endDate, status }
+  const { tripId, name, destination, startDate, endDate, status, completedAt } = t.trip
+  return { tripId, name, destination, startDate, endDate, status, completedAt: completedAt || null }
 }
 
 function newEventId() {
@@ -502,9 +502,12 @@ export async function demoRequest(method, path, body) {
         suggestions: t.suggestions || [],
         approvals: t.approvals || [],
         eventCompletions: (t.doneEventIds || []).map((eventId) => ({ eventId })),
+        eventSkips: t.eventSkips || [],
+        eventSwaps: t.eventSwaps || [],
         picks: t.picks || [],
         expenses: t.expenses || [],
         tips: t.tips || [],
+        feedback: t.feedback || [],
       }
     }
     if (method === 'DELETE') {
@@ -534,24 +537,50 @@ export async function demoRequest(method, path, body) {
     }
     if (segments[2] === 'today' && method === 'GET') {
       const latest = t.plans.length ? t.plans.reduce((a, b) => (b.version > a.version ? b : a)) : null
-      // Demo seed days use display-formatted dates ('Nov 14, Sat'), not the
-      // real backend's ISO "YYYY-MM-DD" — an exact match against the real
-      // "today" query param would (correctly) almost never hit, since these
-      // demo trips aren't scheduled around the actual current date. Fall
-      // back to the first day of the latest plan so the page has something
-      // to show; an exact day.date match still wins if the caller passes it.
-      const day = (latest?.days || []).find((d) => d.date === query.get('date')) || latest?.days?.[0] || null
+      const days = latest?.days || []
+      const requested = query.get('date') || nowIso().slice(0, 10)
+      // Exact match first (mirrors the real backend). Seeded demo trips
+      // aren't scheduled around the actual current date, so prev/next-day
+      // navigation past the plan's own range would otherwise show nothing —
+      // fall back to whichever seeded day is closest to what was asked for,
+      // so there's always something to look at and Prev/Next still moves
+      // between the two real seeded days.
+      const day =
+        days.find((d) => d.date === requested) ||
+        days.reduce(
+          (closest, d) =>
+            !closest || Math.abs(new Date(d.date) - new Date(requested)) < Math.abs(new Date(closest.date) - new Date(requested)) ? d : closest,
+          null
+        )
+      const skippedByEventId = new Map((t.eventSkips || []).map((s) => [s.eventId, s]))
+      const swappedByEventId = new Map((t.eventSwaps || []).map((s) => [s.eventId, s]))
       const events = (day?.events || [])
         .slice()
         .sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time))
-        .map((ev) => ({ ...ev, done: (t.doneEventIds || []).includes(ev.eventId) }))
+        .map((ev) => {
+          const done = (t.doneEventIds || []).includes(ev.eventId)
+          const skip = skippedByEventId.get(ev.eventId)
+          const swap = swappedByEventId.get(ev.eventId)
+          const status = done ? 'done' : skip ? 'skipped' : swap ? 'swapped' : null
+          return { ...ev, done, status, statusNote: skip?.note || swap?.note || null }
+        })
       return {
         date: day?.date || null,
         tripStatus: t.trip.status,
+        tripCompletedAt: t.trip.completedAt || null,
         planVersion: latest?.version || null,
         events,
         bookings: t.bookings,
       }
+    }
+    if (segments[2] === 'complete' && method === 'POST') {
+      t.trip = { ...t.trip, completedAt: nowIso(), completedBy: DEMO_USER.userId }
+      return { trip: t.trip }
+    }
+    if (segments[2] === 'complete' && method === 'DELETE') {
+      const { completedAt: _completedAt, completedBy: _completedBy, ...rest } = t.trip
+      t.trip = rest
+      return { trip: t.trip }
     }
     if (segments[2] === 'expenses' && method === 'POST') {
       const memberIds = t.members.map((m) => m.userId)
@@ -621,7 +650,13 @@ export async function demoRequest(method, path, body) {
         cost: body?.cost,
         referenceLink: link || null,
       }
-      t.bookings.push(booking)
+      // Immutable update, not t.bookings.push(booking) — GET /trips/:tripId
+      // hands out `t.bookings` by reference, and React state from an earlier
+      // GET holds onto that same array. Mutating it in place silently landed
+      // the new booking in already-rendered state before the optimistic
+      // append in Bookings.jsx's handleAdded ran, so it got added twice —
+      // the actual bug behind "booking shows as empty space until refresh."
+      t.bookings = [...t.bookings, booking]
       return { booking }
     }
   }
@@ -720,20 +755,67 @@ export async function demoRequest(method, path, body) {
       t.tips = (t.tips || []).filter((tip) => tip.tipId !== segments[3])
       return { deleted: true, tipId: segments[3] }
     }
+
+    if (segments[2] === 'feedback' && segments[3] === 'me' && method === 'PUT') {
+      const VALID_MOODS = ['loved_it', 'good', 'mixed', 'rough']
+      if (!VALID_MOODS.includes(body?.mood)) throw badRequest(`mood must be one of: ${VALID_MOODS.join(', ')}`)
+      const entry = {
+        userId: DEMO_USER.userId,
+        mood: body.mood,
+        comment: typeof body?.comment === 'string' ? body.comment.trim().slice(0, 1000) || null : null,
+        submittedAt: nowIso(),
+      }
+      t.feedback = [...(t.feedback || []).filter((f) => f.userId !== DEMO_USER.userId), entry]
+      return { feedback: entry }
+    }
   }
 
-  // /trips/:tripId/events/:eventId/done
+  // /trips/:tripId/events/:eventId/done — mutually exclusive with skip/swap
+  // below, mirroring the real backend's transactWrite (see markDone.js): an
+  // event is at most one of done/skipped/swapped, so setting one clears the
+  // other two.
   if (segments.length === 5 && segments[2] === 'events' && segments[4] === 'done') {
     const t = getOr404(segments[1])
     const eventId = segments[3]
     t.doneEventIds = t.doneEventIds || []
     if (method === 'PUT') {
-      if (!t.doneEventIds.includes(eventId)) t.doneEventIds.push(eventId)
+      if (!t.doneEventIds.includes(eventId)) t.doneEventIds = [...t.doneEventIds, eventId]
+      t.eventSkips = (t.eventSkips || []).filter((s) => s.eventId !== eventId)
+      t.eventSwaps = (t.eventSwaps || []).filter((s) => s.eventId !== eventId)
       return { done: true, eventId }
     }
     if (method === 'DELETE') {
       t.doneEventIds = t.doneEventIds.filter((id) => id !== eventId)
       return { done: false, eventId }
+    }
+  }
+
+  // /trips/:tripId/events/:eventId/skip and /swap
+  if (segments.length === 5 && segments[2] === 'events' && (segments[4] === 'skip' || segments[4] === 'swap')) {
+    const t = getOr404(segments[1])
+    const eventId = segments[3]
+    const kind = segments[4]
+    t.eventSkips = t.eventSkips || []
+    t.eventSwaps = t.eventSwaps || []
+    t.doneEventIds = t.doneEventIds || []
+
+    if (method === 'PUT') {
+      const note = typeof body?.note === 'string' ? body.note.trim().slice(0, 500) || null : null
+      const entry = { eventId, note }
+      if (kind === 'skip') {
+        t.eventSkips = [...t.eventSkips.filter((s) => s.eventId !== eventId), entry]
+        t.eventSwaps = t.eventSwaps.filter((s) => s.eventId !== eventId)
+      } else {
+        t.eventSwaps = [...t.eventSwaps.filter((s) => s.eventId !== eventId), entry]
+        t.eventSkips = t.eventSkips.filter((s) => s.eventId !== eventId)
+      }
+      t.doneEventIds = t.doneEventIds.filter((id) => id !== eventId)
+      return { status: kind === 'skip' ? 'skipped' : 'swapped', eventId, note }
+    }
+    if (method === 'DELETE') {
+      if (kind === 'skip') t.eventSkips = t.eventSkips.filter((s) => s.eventId !== eventId)
+      else t.eventSwaps = t.eventSwaps.filter((s) => s.eventId !== eventId)
+      return { status: null, eventId }
     }
   }
 
@@ -745,7 +827,7 @@ export async function demoRequest(method, path, body) {
     t.picks = (t.picks || []).filter((p) => p.eventId !== eventId)
     if (method === 'PUT') {
       const pick = { eventId, chosenIndex: body.chosenIndex, planVersion: latest.version }
-      t.picks.push(pick)
+      t.picks = [...t.picks, pick]
       return { pick }
     }
     if (method === 'DELETE') {

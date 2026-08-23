@@ -88,6 +88,9 @@ export default function Itinerary() {
   const [isExiting, setIsExiting] = useState(false)
   const [exitError, setExitError] = useState('')
 
+  const [isCompleting, setIsCompleting] = useState(false)
+  const [completeError, setCompleteError] = useState('')
+
   const mountedRef = useRef(true)
   const pollTimeoutRef = useRef(null)
 
@@ -307,6 +310,20 @@ export default function Itinerary() {
     }
   }
 
+  async function handleComplete() {
+    setIsCompleting(true)
+    setCompleteError('')
+    try {
+      const res = await api.post(`/trips/${tripId}/complete`)
+      setTrip(res.trip)
+      navigate(`/trip/${tripId}/recap`)
+    } catch (err) {
+      setCompleteError(err.message || 'Could not mark this trip complete.')
+    } finally {
+      setIsCompleting(false)
+    }
+  }
+
   async function handleFinalize() {
     setIsFinalizing(true)
     setFinalizeError('')
@@ -441,6 +458,18 @@ export default function Itinerary() {
               {isGenerating ? 'Generating…' : 'Regenerate'}
             </button>
           )}
+          {trip && !trip.completedAt && (
+            <button className="btn small ghost" type="button" onClick={handleComplete} disabled={isCompleting}>
+              <Icon name="flag" />
+              {isCompleting ? 'Marking complete…' : 'Mark trip complete'}
+            </button>
+          )}
+          {trip?.completedAt && (
+            <Link className="btn small ghost" to={`/trip/${tripId}/recap`}>
+              <Icon name="sparkle" />
+              View recap
+            </Link>
+          )}
           {trip && (
             <button className="btn small warn" type="button" onClick={() => setConfirmingExit(true)}>
               <Icon name="x" />
@@ -450,7 +479,7 @@ export default function Itinerary() {
         </div>
       </div>
 
-      <TripTabs tripId={tripId} active="itinerary" showToday={!!latestPlan} />
+      <TripTabs tripId={tripId} active="itinerary" showToday={!!latestPlan} showRecap={!!trip?.completedAt} />
 
       {showEditTrip && trip && (
         <div style={{ marginBottom: 16 }}>
@@ -501,6 +530,8 @@ export default function Itinerary() {
           </button>
         </div>
       )}
+
+      {completeError && <div className="error-banner">{completeError}</div>}
 
       {weather && (
         <div className="weather-chip glass">

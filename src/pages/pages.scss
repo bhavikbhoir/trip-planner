@@ -850,33 +850,161 @@
   }
 }
 
-// Day-of view only: an event row you can check off as done, in place of the
-// separate per-event sub-checklist this replaced — the trip is already
-// planned, this just tracks what's actually happened so far today. The
-// checkbox itself is visually hidden; the whole row is the tap target, and
-// the event-node icon becomes a checkmark when done.
-.event.checkable {
-  cursor: pointer;
-}
-
-.event-check {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-}
-
-.event.done {
+// Day-of view only: each event carries a Done / Skip / Swap status, in
+// place of the separate per-event sub-checklist this replaced — the trip is
+// already planned, this just tracks what actually happened. Three
+// mutually-exclusive states (not a single checkbox) because "skipped" and
+// "did something different instead" are different facts worth keeping
+// separate on the recap.
+.event.status-done {
   .event-node {
-    background: var(--data);
-    border-color: var(--data);
+    background: var(--success);
+    border-color: var(--success);
     color: var(--surface-solid);
   }
   .desc {
     color: var(--ink-dim);
     text-decoration: line-through;
   }
+}
+
+.event.status-skipped {
+  .event-node {
+    background: var(--surface-solid);
+    border-color: var(--ink-dim);
+    color: var(--ink-dim);
+  }
+  .desc {
+    color: var(--ink-dim);
+    text-decoration: line-through;
+  }
+}
+
+.event.status-swapped {
+  .event-node {
+    background: var(--data);
+    border-color: var(--data);
+    color: var(--surface-solid);
+  }
+}
+
+.check-pills {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.check-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font: inherit;
+  font-size: $font-xs;
+  font-weight: 700;
+  padding: 5px 11px;
+  border-radius: 999px;
+  border: 1px solid var(--surface-border);
+  background: var(--surface-solid);
+  color: var(--ink-dim);
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  .icon {
+    width: 11px;
+    height: 11px;
+  }
+
+  &:hover {
+    border-color: var(--accent-1);
+    color: var(--ink);
+  }
+
+  &[aria-pressed='true'] {
+    border-color: transparent;
+  }
+  &.done[aria-pressed='true'] {
+    background: color-mix(in srgb, var(--success) 16%, transparent);
+    color: var(--success);
+  }
+  &.skipped[aria-pressed='true'] {
+    background: color-mix(in srgb, var(--ink-dim) 18%, transparent);
+    color: var(--ink);
+  }
+  &.swapped[aria-pressed='true'] {
+    background: color-mix(in srgb, var(--data) 16%, transparent);
+    color: var(--data);
+  }
+}
+
+.status-note-input {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  font: inherit;
+  font-size: $font-sm;
+  padding: 7px 10px;
+  border-radius: $radius-sm;
+  border: 1px solid var(--surface-border);
+  background: var(--surface-solid);
+  color: var(--ink);
+
+  &::placeholder {
+    color: var(--ink-dim);
+  }
+  &:focus {
+    outline: none;
+    border-color: var(--accent-1);
+  }
+}
+
+// ── Recap ───────────────────────────────────────────────────────────
+.recap-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: $space-md;
+  margin-bottom: $space-md;
+}
+
+.recap-stat {
+  text-align: center;
+  padding: 14px 10px;
+  border-radius: $radius-md;
+  border: 1px solid var(--surface-border);
+  background: var(--surface-solid);
+
+  .num {
+    font-size: $font-xl;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+  .label {
+    font-size: $font-xs;
+    color: var(--ink-dim);
+    margin-top: 2px;
+  }
+  &.done .num {
+    color: var(--success);
+  }
+  &.skipped .num {
+    color: var(--ink-dim);
+  }
+  &.swapped .num {
+    color: var(--data);
+  }
+}
+
+.recap-bar-track {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--surface-border);
+  overflow: hidden;
+  margin: 4px 0 2px;
+}
+
+.recap-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
 }
 
 .generating-panel {

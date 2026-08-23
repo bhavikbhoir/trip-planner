@@ -98,7 +98,7 @@ export default function Bookings() {
         </div>
       </div>
 
-      <TripTabs tripId={tripId} active="bookings" showToday />
+      <TripTabs tripId={tripId} active="bookings" showToday showRecap={!!trip?.completedAt} />
 
       {loading && (
         <div className="panel glass" style={{ padding: 24 }}>
