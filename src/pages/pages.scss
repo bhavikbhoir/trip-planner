@@ -99,6 +99,14 @@
   }
 }
 
+.auth-forgot-link {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: $font-xs;
+  color: var(--accent-1);
+  font-weight: 700;
+}
+
 .auth-divider {
   display: flex;
   align-items: center;

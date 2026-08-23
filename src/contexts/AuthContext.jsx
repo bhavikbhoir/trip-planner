@@ -6,6 +6,8 @@ import {
   signIn as amplifySignIn,
   signUp as amplifySignUp,
   confirmSignUp as amplifyConfirmSignUp,
+  resetPassword as amplifyResetPassword,
+  confirmResetPassword as amplifyConfirmResetPassword,
   fetchAuthSession,
   fetchUserAttributes,
   updateUserAttributes,
@@ -121,6 +123,14 @@ export function AuthProvider({ children }) {
     return amplifyConfirmSignUp({ username: email, confirmationCode: code })
   }
 
+  async function requestPasswordReset(email) {
+    return amplifyResetPassword({ username: email })
+  }
+
+  async function confirmPasswordReset(email, code, newPassword) {
+    return amplifyConfirmResetPassword({ username: email, confirmationCode: code, newPassword })
+  }
+
   async function logout() {
     if (isDemoMode()) {
       window.localStorage.removeItem(DEMO_STORAGE_KEY)
@@ -176,6 +186,8 @@ export function AuthProvider({ children }) {
         login,
         register,
         confirmRegistration,
+        requestPasswordReset,
+        confirmPasswordReset,
         logout,
         enterDemo,
         updateDisplayName,
