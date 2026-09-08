@@ -201,6 +201,13 @@ export default function AppShell({ actions, children, minimal = false }) {
         </div>
       </header>
       {children}
+      <footer className="app-footer">
+        <span>&copy; {new Date().getFullYear()} Manifest</span>
+        <span className="app-footer-links">
+          <Link to="/privacy">Privacy</Link>
+          <Link to="/terms">Terms</Link>
+        </span>
+      </footer>
     </div>
   )
 }

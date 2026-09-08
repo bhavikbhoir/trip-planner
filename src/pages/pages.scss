@@ -99,6 +99,24 @@
   }
 }
 
+.legal-consent {
+  font-size: $font-xs;
+  color: var(--ink-dim);
+  margin-top: 14px;
+  text-align: center;
+  line-height: 1.5;
+
+  a {
+    color: var(--ink-dim);
+    font-weight: 700;
+    text-decoration: underline;
+
+    &:hover {
+      color: var(--accent-1);
+    }
+  }
+}
+
 .auth-forgot-link {
   display: inline-block;
   margin-top: 8px;

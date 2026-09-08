@@ -15,6 +15,8 @@ import Bookings from './pages/Bookings'
 import Expenses from './pages/Expenses'
 import Recap from './pages/Recap'
 import Settings from './pages/Settings'
+import Privacy from './pages/Privacy'
+import Terms from './pages/Terms'
 
 function ProtectedRoute({ children }) {
   const { user, isLoading } = useAuth()
@@ -42,6 +44,8 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/terms" element={<Terms />} />
         <Route
           path="/"
           element={

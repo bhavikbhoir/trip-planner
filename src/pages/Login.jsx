@@ -94,6 +94,10 @@ export default function Login() {
               Try the demo — no account needed
             </button>
           </form>
+          <p className="legal-consent">
+            By continuing you agree to Manifest's{' '}
+            <Link to="/terms">Terms of Service</Link> and <Link to="/privacy">Privacy Policy</Link>.
+          </p>
         </div>
       </div>
     </AppShell>

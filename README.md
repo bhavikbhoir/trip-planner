@@ -2,6 +2,9 @@
 
 React + Vite frontend for a collaborative AI group trip planner. Companion backend lives in `../trip-planner-api`.
 
+Looking for a feature walkthrough rather than the codebase? See
+[`USER_GUIDE.md`](./USER_GUIDE.md).
+
 ## Stack
 
 React 18 + Vite 6, Framer Motion, SCSS (token-based theming, light = paper boarding pass / dark = split-flap board), `react-router-dom`, AWS Amplify for Cognito auth, Leaflet for maps, deployed to Firebase Hosting.

@@ -111,6 +111,11 @@ export default function Register() {
                   Sign in
                 </Link>
               </p>
+              <p className="legal-consent">
+                By creating an account you agree to Manifest's{' '}
+                <Link to="/terms">Terms of Service</Link> and{' '}
+                <Link to="/privacy">Privacy Policy</Link>.
+              </p>
             </form>
           ) : (
             <form className="panel glass auth-panel" onSubmit={handleConfirm}>

@@ -86,6 +86,34 @@ h3 {
   padding: 0 20px 80px;
 }
 
+// ── Footer ──────────────────────────────────────────────────────────
+.app-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: $space-md;
+  margin-top: $space-2xl;
+  padding: $space-lg 4px 0;
+  border-top: 1px solid var(--surface-border);
+  font-size: $font-xs;
+  color: var(--ink-dim);
+}
+
+.app-footer-links {
+  display: flex;
+  gap: $space-lg;
+
+  a {
+    color: var(--ink-dim);
+    font-weight: 600;
+
+    &:hover {
+      color: var(--accent-1);
+    }
+  }
+}
+
 // ── Topbar ──────────────────────────────────────────────────────────
 .topbar {
   position: sticky;
@@ -573,6 +601,50 @@ h3 {
 @keyframes pulse-dot {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.35; }
+}
+
+// ── Error boundary fallback ─────────────────────────────────────────
+.error-boundary {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+
+.error-boundary-card {
+  max-width: 440px;
+
+  h1 {
+    font-size: $font-xl;
+    font-weight: 800;
+    margin: 6px 0 10px;
+  }
+
+  p {
+    font-size: $font-sm;
+    color: var(--ink-dim);
+    line-height: 1.55;
+  }
+}
+
+.error-boundary-detail {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: $radius-sm;
+  background: var(--surface-solid);
+  border: 1px solid var(--surface-border);
+  color: var(--warn);
+  font-size: $font-xs;
+  font-family: $font-mono;
+  max-height: 200px;
+  overflow: auto;
+  white-space: pre-wrap;
+}
+
+.error-boundary-actions {
+  display: flex;
+  gap: $space-sm;
+  margin-top: 18px;
 }
 
 @media (prefers-reduced-motion: reduce) {
