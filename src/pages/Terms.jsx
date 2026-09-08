@@ -5,7 +5,7 @@ import './legal.scss'
 // See the matching note in Privacy.jsx — replace with a real contact
 // address, and have a lawyer licensed where you operate review both pages,
 // before this goes in front of the public.
-const LEGAL_CONTACT_EMAIL = 'privacy@manifest.app'
+const LEGAL_CONTACT_EMAIL = 'bhvkbhoir@gmail.com'
 
 export default function Terms() {
   return (

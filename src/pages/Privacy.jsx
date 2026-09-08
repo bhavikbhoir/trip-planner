@@ -6,7 +6,7 @@ import './legal.scss'
 // registered-business address) before this goes in front of real users —
 // see LEGAL_CONTACT_EMAIL below and CAN-SPAM's mailing-address requirement,
 // already handled for outgoing email itself via SES_MAILING_ADDRESS.
-const LEGAL_CONTACT_EMAIL = 'privacy@manifest.app'
+const LEGAL_CONTACT_EMAIL = 'bhvkbhoir@gmail.com'
 
 // Content reflects what this codebase actually does as of the date below —
 // keep this in sync with functions/*, shared/ses.js, and shared/bedrock.js
