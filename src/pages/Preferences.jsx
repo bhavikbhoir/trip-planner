@@ -119,11 +119,17 @@ export default function Preferences() {
 
   async function handleFinish() {
     setSubmitError('')
+    const namedCompanions = companions.filter((c) => c.name.trim())
+    if (namedCompanions.some((c) => c.age === '' || c.age === null || c.age === undefined)) {
+      setStepIndex(STEPS.indexOf('groupDynamics'))
+      setSubmitError('Please add an age for each companion, or remove them.')
+      return
+    }
     setIsSubmitting(true)
     try {
       await api.patch(`/trips/${tripId}/members/me`, {
         preferences: { food, cuisines, activities, budgetPace, groupDynamics, dislikes, mustDo },
-        companions: companions.filter((c) => c.name.trim()),
+        companions: namedCompanions.map((c) => ({ ...c, age: Number(c.age) })),
       })
       if (arrivalFlight || arrivalTime || departureFlight || departureTime || transportMode) {
         await api.put(`/trips/${tripId}/logistics/me`, {

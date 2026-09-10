@@ -613,7 +613,9 @@ export default function Itinerary() {
               <span className="icon-badge">
                 <Icon name="baby" />
               </span>
-              <span>Traveling with {allCompanions.map((c) => `${c.name} (${c.age})`).join(', ')}</span>
+              <span>
+                Traveling with {allCompanions.map((c) => (c.age !== '' && c.age != null ? `${c.name} (${c.age})` : c.name)).join(', ')}
+              </span>
             </div>
           )}
         </div>
