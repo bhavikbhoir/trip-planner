@@ -66,6 +66,7 @@ function ConnectToClaude() {
           className="mono"
           style={{
             flex: 1,
+            minWidth: 0,
             fontSize: 12.5,
             padding: '8px 10px',
             borderRadius: 8,

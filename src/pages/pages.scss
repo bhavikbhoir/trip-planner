@@ -16,6 +16,7 @@
 }
 
 .auth-pitch {
+  min-width: 0;
   padding: 8px 0;
 
   h1 {
@@ -80,6 +81,7 @@
 
 .auth-shell {
   max-width: 420px;
+  min-width: 0;
 }
 
 .auth-panel {
