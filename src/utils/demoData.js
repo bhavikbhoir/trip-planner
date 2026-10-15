@@ -68,6 +68,18 @@ function nowIso() {
   return new Date().toISOString()
 }
 
+// Mirrors trip-planner-api's shared/expenseShares.js — every split member
+// gets an explicit share count (default 1), anything for someone not in
+// the split is dropped.
+function normalizeShares(shares, split) {
+  const normalized = {}
+  for (const userId of split) {
+    const raw = shares?.[userId]
+    normalized[userId] = Number.isInteger(raw) && raw >= 1 ? raw : 1
+  }
+  return normalized
+}
+
 // Mirrors trip-planner-api's functions/trips/today.js — event times are
 // "H:MMa/p" strings, so a plain string sort would put "10:00a" before "9:40a".
 function timeToMinutes(time) {
@@ -605,6 +617,7 @@ export async function demoRequest(method, path, body) {
         amount: Number(body?.amount) || 0,
         paidBy: body?.paidBy || DEMO_USER.userId,
         splitBetween: split,
+        shares: normalizeShares(body?.shares, split),
         addedBy: DEMO_USER.userId,
         createdAt: nowIso(),
       }
@@ -768,8 +781,20 @@ export async function demoRequest(method, path, body) {
     }
 
     if (segments[2] === 'expenses' && method === 'DELETE') {
-      t.expenses = (t.expenses || []).filter((e) => e.expenseId !== segments[3])
-      return { deleted: true, expenseId: segments[3] }
+      const expenseId = segments[3]
+      const expense = (t.expenses || []).find((e) => e.expenseId === expenseId)
+      t.expenses = (t.expenses || []).filter((e) => e.expenseId !== expenseId)
+      // Mirrors the real backend — deleting an expense that came from
+      // converting a booking clears that booking's marker too, so "Add to
+      // expenses" reappears instead of staying stuck forever.
+      if (expense?.sourceBookingId) {
+        t.bookings = (t.bookings || []).map((b) =>
+          b.bookingId === expense.sourceBookingId && b.convertedExpenseId === expenseId
+            ? { ...b, convertedExpenseId: null }
+            : b
+        )
+      }
+      return { deleted: true, expenseId }
     }
 
     if (segments[2] === 'plan' && segments[3] === 'generate' && method === 'POST') {
@@ -889,7 +914,9 @@ export async function demoRequest(method, path, body) {
       amount: booking.cost,
       paidBy: body?.paidBy || DEMO_USER.userId,
       splitBetween: split,
+      shares: normalizeShares(body?.shares, split),
       addedBy: DEMO_USER.userId,
+      sourceBookingId: bookingId,
       createdAt: nowIso(),
     }
     t.expenses = [...(t.expenses || []), expense]

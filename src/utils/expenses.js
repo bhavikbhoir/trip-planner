@@ -3,14 +3,19 @@
 // already has.
 
 // Net balance per member: positive = they're owed money, negative = they owe.
+// `exp.shares` is optional (older expenses, or ones created before this
+// existed, won't have it) — anyone without an explicit entry defaults to 1
+// share, which collapses back to the original plain-even-split math.
 export function computeBalances(expenses, members) {
   const balances = {}
   for (const m of members) balances[m.userId] = 0
   for (const exp of expenses) {
-    const share = exp.amount / exp.splitBetween.length
+    const shareCount = (userId) => exp.shares?.[userId] ?? 1
+    const totalShares = exp.splitBetween.reduce((sum, userId) => sum + shareCount(userId), 0)
+    const perShare = exp.amount / totalShares
     balances[exp.paidBy] = (balances[exp.paidBy] || 0) + exp.amount
     for (const userId of exp.splitBetween) {
-      balances[userId] = (balances[userId] || 0) - share
+      balances[userId] = (balances[userId] || 0) - perShare * shareCount(userId)
     }
   }
   return balances
