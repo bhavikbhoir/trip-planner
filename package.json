@@ -1,7 +1,7 @@
 {
   "name": "trip-planner",
   "private": true,
-  "version": "1.4.0.1",
+  "version": "1.4.0.2",
   "type": "module",
   "engines": {
     "node": ">=20.0.0"
