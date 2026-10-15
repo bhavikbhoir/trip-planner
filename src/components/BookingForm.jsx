@@ -20,16 +20,20 @@ function toLocalInput(v) {
   return String(v).slice(0, 16)
 }
 
-export default function BookingForm({ tripId, booking, onSaved, onCancel }) {
+// `prefill` seeds a brand-new (unsaved) booking — e.g. from the image-
+// extraction flow — without switching the form into edit mode the way
+// `booking` does; it only ever affects initial field values.
+export default function BookingForm({ tripId, booking, prefill, onSaved, onCancel }) {
   const isEdit = !!booking
-  const [type, setType] = useState(booking?.type || 'hotel')
-  const [name, setName] = useState(booking?.name || '')
-  const [location, setLocation] = useState(booking?.location || '')
-  const [startDatetime, setStartDatetime] = useState(toLocalInput(booking?.startDatetime))
-  const [endDatetime, setEndDatetime] = useState(toLocalInput(booking?.endDatetime))
-  const [confirmation, setConfirmation] = useState(booking?.confirmation || '')
-  const [cost, setCost] = useState(booking?.cost != null ? String(booking.cost) : '')
+  const [type, setType] = useState(booking?.type || prefill?.type || 'hotel')
+  const [name, setName] = useState(booking?.name || prefill?.name || '')
+  const [location, setLocation] = useState(booking?.location || prefill?.location || '')
+  const [startDatetime, setStartDatetime] = useState(toLocalInput(booking?.startDatetime || prefill?.startDatetime))
+  const [endDatetime, setEndDatetime] = useState(toLocalInput(booking?.endDatetime || prefill?.endDatetime))
+  const [confirmation, setConfirmation] = useState(booking?.confirmation || prefill?.confirmation || '')
+  const [cost, setCost] = useState(booking?.cost != null ? String(booking.cost) : prefill?.cost || '')
   const [referenceLink, setReferenceLink] = useState(booking?.referenceLink || '')
+  const [breakfastIncluded, setBreakfastIncluded] = useState(!!(booking?.breakfastIncluded ?? prefill?.breakfastIncluded))
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -51,6 +55,7 @@ export default function BookingForm({ tripId, booking, onSaved, onCancel }) {
       confirmation: confirmation || undefined,
       cost: cost ? Number(cost) : undefined,
       referenceLink: link || undefined,
+      breakfastIncluded: type === 'hotel' ? breakfastIncluded : undefined,
     }
     try {
       const res = isEdit
@@ -109,6 +114,22 @@ export default function BookingForm({ tripId, booking, onSaved, onCancel }) {
           <input id="bookingLocation" value={location} onChange={(e) => setLocation(e.target.value)} />
         </div>
       </div>
+
+      {type === 'hotel' && (
+        <div className="field">
+          <label>Amenities</label>
+          <div className="chip-grid">
+            <button
+              type="button"
+              className="chip"
+              aria-pressed={breakfastIncluded}
+              onClick={() => setBreakfastIncluded((v) => !v)}
+            >
+              <Icon name="fork" /> Breakfast included
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="row2">
         <div className="field">

@@ -69,6 +69,7 @@ export default function Itinerary() {
   const [isGeneratingTips, setIsGeneratingTips] = useState(false)
   const [tipsError, setTipsError] = useState('')
   const [weather, setWeather] = useState(null)
+  const [forecast, setForecast] = useState([])
   const [loadError, setLoadError] = useState('')
 
   const [isGenerating, setIsGenerating] = useState(false)
@@ -90,6 +91,10 @@ export default function Itinerary() {
 
   const [isCompleting, setIsCompleting] = useState(false)
   const [completeError, setCompleteError] = useState('')
+
+  const [dayNavTop, setDayNavTop] = useState(0)
+  const [activeDay, setActiveDay] = useState(0)
+  const dayRefs = useRef([])
 
   const mountedRef = useRef(true)
   const pollTimeoutRef = useRef(null)
@@ -131,10 +136,26 @@ export default function Itinerary() {
     // Best-effort — a missing/failed weather fetch shouldn't block the page.
     api
       .get(`/trips/${tripId}/weather`)
-      .then((res) => setWeather(res.weather))
+      .then((res) => {
+        setWeather(res.weather)
+        setForecast(res.forecast || [])
+      })
       .catch(() => setWeather(null))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tripId])
+
+  // Tracks the app shell's sticky topbar height so the day-nav strip can
+  // stick directly beneath it instead of overlapping it — the topbar's own
+  // height isn't fixed (it can wrap its action buttons on narrow screens).
+  useEffect(() => {
+    function measureTopbar() {
+      const el = document.querySelector('.topbar')
+      setDayNavTop(el ? el.getBoundingClientRect().height : 0)
+    }
+    measureTopbar()
+    window.addEventListener('resize', measureTopbar)
+    return () => window.removeEventListener('resize', measureTopbar)
+  }, [])
 
   async function handleGenerate() {
     setGenerateError('')
@@ -338,6 +359,30 @@ export default function Itinerary() {
   }
 
   const latestPlan = plans.length ? plans.reduce((a, b) => (b.version > a.version ? b : a)) : null
+  const days = latestPlan?.days || []
+  const forecastByDate = new Map(forecast.map((f) => [f.date, f]))
+
+  useEffect(() => {
+    if (days.length < 2) return undefined
+    function onScroll() {
+      const threshold = dayNavTop + 70
+      let current = 0
+      dayRefs.current.forEach((el, i) => {
+        if (el && el.getBoundingClientRect().top - threshold <= 0) current = i
+      })
+      setActiveDay(current)
+    }
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [days.length, dayNavTop])
+
+  function jumpToDay(i) {
+    const el = dayRefs.current[i]
+    if (!el) return
+    const y = el.getBoundingClientRect().top + window.scrollY - dayNavTop - 56
+    window.scrollTo({ top: y, behavior: 'smooth' })
+  }
 
   // Only picks made against the current plan version apply — a regeneration
   // bumps the version and reassigns eventIds, so older picks (from a prior
@@ -481,6 +526,22 @@ export default function Itinerary() {
 
       <TripTabs tripId={tripId} active="itinerary" showToday={!!latestPlan} showRecap={!!trip?.completedAt} />
 
+      {days.length > 1 && (
+        <div className="day-nav" style={{ top: dayNavTop }}>
+          {days.map((day, i) => (
+            <button
+              key={i}
+              type="button"
+              className={`day-nav-chip${activeDay === i ? ' active' : ''}`}
+              onClick={() => jumpToDay(i)}
+            >
+              Day {i + 1}
+              <span className="date">{day.date}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
       {showEditTrip && trip && (
         <div style={{ marginBottom: 16 }}>
           <EditTripForm
@@ -613,7 +674,9 @@ export default function Itinerary() {
               <span className="icon-badge">
                 <Icon name="baby" />
               </span>
-              <span>Traveling with {allCompanions.map((c) => `${c.name} (${c.age})`).join(', ')}</span>
+              <span>
+                Traveling with {allCompanions.map((c) => (c.age !== '' && c.age != null ? `${c.name} (${c.age})` : c.name)).join(', ')}
+              </span>
             </div>
           )}
         </div>
@@ -649,11 +712,17 @@ export default function Itinerary() {
 
       {!isGenerating && latestPlan && (
         <StaggerContainer>
-          {latestPlan.days.map((day, i) => (
+          {days.map((day, i) => (
             <StaggerItem key={i} className="day-block">
-              <div className="day-head">
+              <div className="day-head" ref={(el) => (dayRefs.current[i] = el)}>
                 <span className="day-num">Day {i + 1}</span>
                 <span className="day-date mono">{day.date}</span>
+                {forecastByDate.has(day.date) && (
+                  <span className="day-weather mono">
+                    <Icon name="sun" />
+                    {forecastByDate.get(day.date).high}°/{forecastByDate.get(day.date).low}°
+                  </span>
+                )}
               </div>
               {day.events.map((rawEv, j) => {
                 const ev = resolveMeal(rawEv)

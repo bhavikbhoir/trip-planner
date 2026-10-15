@@ -213,22 +213,24 @@ export default function Expenses() {
             </form>
           )}
 
-          <div className="panel glass" style={{ marginTop: showForm ? 16 : 0, marginBottom: 16 }}>
+          <p className="eyebrow" style={{ marginTop: showForm ? 16 : 0, marginBottom: 10 }}>
+            Balances
+          </p>
+          <div className="balance-tiles">
             {members.map((m) => {
               const net = balances[m.userId] || 0
               const settled = Math.abs(net) < 0.01
+              const mood = settled ? 'settled' : net > 0 ? 'positive' : 'negative'
               return (
-                <div className="anchor-row" key={m.userId}>
-                  <span className="icon-badge" style={{ color: settled ? undefined : net > 0 ? 'var(--data)' : 'var(--warn)' }}>
-                    <Icon name={settled ? 'check' : net > 0 ? 'plus' : 'x'} />
-                  </span>
-                  <span>
-                    {memberLabel(m.userId)} —{' '}
+                <div className="balance-tile" key={m.userId}>
+                  <span className="balance-name">{memberLabel(m.userId)}</span>
+                  <span className={`balance-amount ${mood}`}>{settled ? '—' : fmtMoney(net)}</span>
+                  <span className="balance-label">
                     {settled
-                      ? 'settled up'
+                      ? 'Settled up'
                       : net > 0
-                        ? `${verbFor(m.userId, 'is', 'are')} owed ${fmtMoney(net)}`
-                        : `${verbFor(m.userId, 'owes', 'owe')} ${fmtMoney(net)}`}
+                        ? `${verbFor(m.userId, 'is', 'are')} owed`
+                        : `${verbFor(m.userId, 'owes', 'owe')}`}
                   </span>
                 </div>
               )
@@ -236,23 +238,26 @@ export default function Expenses() {
           </div>
 
           {settleUp.length > 0 && (
-            <div className="panel glass" style={{ marginBottom: 16 }}>
-              <p className="eyebrow" style={{ marginBottom: 10 }}>
+            <>
+              <p className="eyebrow" style={{ marginTop: 20, marginBottom: 10 }}>
                 Settle up
               </p>
-              {settleUp.map((t, i) => (
-                <div className="anchor-row" key={i}>
-                  <span className="icon-badge">
-                    <Icon name="wallet" />
-                  </span>
-                  <span>
-                    {memberLabel(t.from)} {verbFor(t.from, 'owes', 'owe')} {memberLabel(t.to)} {fmtMoney(t.amount)}
-                  </span>
-                </div>
-              ))}
-            </div>
+              <div className="settle-list">
+                {settleUp.map((t, i) => (
+                  <div className="settle-row" key={i}>
+                    <span className="settle-names">
+                      {memberLabel(t.from)} <Icon name="route" className="settle-arrow" /> {memberLabel(t.to)}
+                    </span>
+                    <span className="settle-amount mono">{fmtMoney(t.amount)}</span>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
 
+          <p className="eyebrow" style={{ marginTop: 20, marginBottom: 10 }}>
+            Expense log
+          </p>
           {expenses.length === 0 ? (
             <div className="panel glass empty-state">
               <Icon name="wallet" />
@@ -260,32 +265,32 @@ export default function Expenses() {
             </div>
           ) : (
             <StaggerContainer>
-              <StaggerItem className="day-block">
-                {expenses.map((exp) => (
-                  <div className="event" key={exp.expenseId}>
-                    <span className="event-node">
-                      <Icon name="wallet" />
-                    </span>
-                    <div className="event-body">
-                      <div className="desc">
-                        {exp.description}
-                        <span className="event-cost mono">{fmtMoney(exp.amount)}</span>
+              <StaggerItem>
+                <div className="ledger panel glass">
+                  {expenses.map((exp) => (
+                    <div className="ledger-row" key={exp.expenseId}>
+                      <span className="ledger-icon">
+                        <Icon name="wallet" />
+                      </span>
+                      <div className="ledger-info">
+                        <div className="ledger-desc">{exp.description}</div>
+                        <div className="ledger-meta">
+                          Paid by {memberLabel(exp.paidBy)} · split {exp.splitBetween.length} way
+                          {exp.splitBetween.length === 1 ? '' : 's'}
+                        </div>
                       </div>
-                      <div className="note">
-                        Paid by {memberLabel(exp.paidBy)} · split {exp.splitBetween.length} way
-                        {exp.splitBetween.length === 1 ? '' : 's'}
-                      </div>
+                      <span className="ledger-amount mono">{fmtMoney(exp.amount)}</span>
+                      <button
+                        className="btn small ghost"
+                        type="button"
+                        aria-label={`Delete expense: ${exp.description}`}
+                        onClick={() => handleDelete(exp.expenseId)}
+                      >
+                        <Icon name="x" />
+                      </button>
                     </div>
-                    <button
-                      className="btn small ghost"
-                      type="button"
-                      aria-label={`Delete expense: ${exp.description}`}
-                      onClick={() => handleDelete(exp.expenseId)}
-                    >
-                      <Icon name="x" />
-                    </button>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </StaggerItem>
             </StaggerContainer>
           )}

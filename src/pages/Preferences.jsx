@@ -60,6 +60,8 @@ export default function Preferences() {
   const [companions, setCompanions] = useState([])
   const [dislikes, setDislikes] = useState('')
   const [mustDo, setMustDo] = useState('')
+  const [preferredHotels, setPreferredHotels] = useState('')
+  const [eatingPlaces, setEatingPlaces] = useState('')
   const [arrivalFlight, setArrivalFlight] = useState('')
   const [arrivalTime, setArrivalTime] = useState('')
   const [departureFlight, setDepartureFlight] = useState('')
@@ -81,6 +83,8 @@ export default function Preferences() {
           setGroupDynamics(mine.preferences.groupDynamics || [])
           setDislikes(mine.preferences.dislikes || '')
           setMustDo(mine.preferences.mustDo || '')
+          setPreferredHotels(mine.preferences.preferredHotels || '')
+          setEatingPlaces(mine.preferences.eatingPlaces || '')
         }
         if (mine?.companions?.length) setCompanions(mine.companions)
         const myLogistics = res.logistics?.find((l) => l.userId === user?.userId)
@@ -119,11 +123,27 @@ export default function Preferences() {
 
   async function handleFinish() {
     setSubmitError('')
+    const namedCompanions = companions.filter((c) => c.name.trim())
+    if (namedCompanions.some((c) => c.age === '' || c.age === null || c.age === undefined)) {
+      setStepIndex(STEPS.indexOf('groupDynamics'))
+      setSubmitError('Please add an age for each companion, or remove them.')
+      return
+    }
     setIsSubmitting(true)
     try {
       await api.patch(`/trips/${tripId}/members/me`, {
-        preferences: { food, cuisines, activities, budgetPace, groupDynamics, dislikes, mustDo },
-        companions: companions.filter((c) => c.name.trim()),
+        preferences: {
+          food,
+          cuisines,
+          activities,
+          budgetPace,
+          groupDynamics,
+          dislikes,
+          mustDo,
+          preferredHotels,
+          eatingPlaces,
+        },
+        companions: namedCompanions.map((c) => ({ ...c, age: Number(c.age) })),
       })
       if (arrivalFlight || arrivalTime || departureFlight || departureTime || transportMode) {
         await api.put(`/trips/${tripId}/logistics/me`, {
@@ -337,6 +357,32 @@ export default function Preferences() {
                       placeholder="e.g. Sunrise trek, at least one beach day"
                       value={mustDo}
                       onChange={(e) => setMustDo(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="field">
+                  <label htmlFor="preferredHotels">Preferred hotels or chains</label>
+                  <div className="field-input">
+                    <Icon name="bed" />
+                    <input
+                      id="preferredHotels"
+                      type="text"
+                      placeholder="e.g. Marriott, boutique over chain"
+                      value={preferredHotels}
+                      onChange={(e) => setPreferredHotels(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="field">
+                  <label htmlFor="eatingPlaces">Favorite food / eating spots</label>
+                  <div className="field-input">
+                    <Icon name="fork" />
+                    <input
+                      id="eatingPlaces"
+                      type="text"
+                      placeholder="e.g. Ramen, local noodle shops"
+                      value={eatingPlaces}
+                      onChange={(e) => setEatingPlaces(e.target.value)}
                     />
                   </div>
                 </div>

@@ -513,6 +513,26 @@ h3 {
   margin-bottom: 16px;
 }
 
+.notice-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: color-mix(in srgb, var(--data) 10%, var(--surface-solid));
+  border: 1px solid color-mix(in srgb, var(--data) 40%, transparent);
+  color: var(--ink);
+  padding: 10px 14px;
+  border-radius: $radius-sm;
+  font-size: $font-sm;
+  margin-bottom: 12px;
+
+  .icon {
+    width: 14px;
+    height: 14px;
+    color: var(--data);
+    flex-shrink: 0;
+  }
+}
+
 .confirm-banner {
   display: flex;
   align-items: center;
