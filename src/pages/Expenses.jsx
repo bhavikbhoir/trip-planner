@@ -27,6 +27,7 @@ export default function Expenses() {
   const [amount, setAmount] = useState('')
   const [paidBy, setPaidBy] = useState('')
   const [splitBetween, setSplitBetween] = useState([])
+  const [shares, setShares] = useState({})
   const [formError, setFormError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -39,6 +40,17 @@ export default function Expenses() {
   // agreement against a third-person verb ("You owes", "You is owed").
   function verbFor(userId, thirdPerson, secondPerson) {
     return userId === user?.userId ? secondPerson : thirdPerson
+  }
+
+  // Plain "split N ways" for the common even split; once anyone carries
+  // extra shares that phrasing would be misleading (balances aren't equal
+  // even though N people are listed), so it switches to naming the share
+  // count instead.
+  function splitLabel(exp) {
+    const peopleCount = exp.splitBetween.length
+    const totalShares = exp.splitBetween.reduce((sum, id) => sum + (exp.shares?.[id] || 1), 0)
+    if (totalShares === peopleCount) return `split ${peopleCount} way${peopleCount === 1 ? '' : 's'}`
+    return `split ${totalShares} shares among ${peopleCount} people`
   }
 
   async function loadTrip() {
@@ -61,11 +73,16 @@ export default function Expenses() {
     if (!showForm) return
     setPaidBy(user?.userId || members[0]?.userId || '')
     setSplitBetween(members.map((m) => m.userId))
+    setShares({})
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showForm])
 
   function toggleSplit(userId) {
     setSplitBetween((s) => (s.includes(userId) ? s.filter((id) => id !== userId) : [...s, userId]))
+  }
+
+  function adjustShare(userId, delta) {
+    setShares((s) => ({ ...s, [userId]: Math.max(1, (s[userId] || 1) + delta) }))
   }
 
   async function handleAddExpense(e) {
@@ -83,6 +100,7 @@ export default function Expenses() {
         amount: amountNum,
         paidBy,
         splitBetween,
+        shares: Object.fromEntries(splitBetween.map((id) => [id, shares[id] || 1])),
       })
       setExpenses((ex) => [...ex, res.expense])
       setDescription('')
@@ -202,6 +220,33 @@ export default function Expenses() {
                     </button>
                   ))}
                 </div>
+                {splitBetween.length > 0 && (
+                  <div className="share-steppers">
+                    {splitBetween.map((userId) => (
+                      <div className="share-row" key={userId}>
+                        <span className="share-name">{memberLabel(userId)}</span>
+                        <span className="share-stepper">
+                          <button
+                            type="button"
+                            aria-label={`Fewer shares for ${memberLabel(userId)}`}
+                            disabled={(shares[userId] || 1) <= 1}
+                            onClick={() => adjustShare(userId, -1)}
+                          >
+                            −
+                          </button>
+                          <span className="share-count mono">{shares[userId] || 1}</span>
+                          <button
+                            type="button"
+                            aria-label={`More shares for ${memberLabel(userId)}`}
+                            onClick={() => adjustShare(userId, 1)}
+                          >
+                            +
+                          </button>
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="q-actions">
@@ -275,8 +320,7 @@ export default function Expenses() {
                       <div className="ledger-info">
                         <div className="ledger-desc">{exp.description}</div>
                         <div className="ledger-meta">
-                          Paid by {memberLabel(exp.paidBy)} · split {exp.splitBetween.length} way
-                          {exp.splitBetween.length === 1 ? '' : 's'}
+                          Paid by {memberLabel(exp.paidBy)} · {splitLabel(exp)}
                         </div>
                       </div>
                       <span className="ledger-amount mono">{fmtMoney(exp.amount)}</span>

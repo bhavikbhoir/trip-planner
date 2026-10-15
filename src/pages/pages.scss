@@ -336,6 +336,64 @@
   }
 }
 
+.share-steppers {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: -8px;
+  margin-bottom: 18px;
+}
+
+.share-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 12px;
+  border-radius: $radius-sm;
+  background: var(--surface-solid);
+  border: 1px solid var(--surface-border);
+}
+
+.share-name {
+  font-size: $font-sm;
+  color: var(--ink-dim);
+}
+
+.share-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  button {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 1px solid var(--surface-border);
+    background: var(--surface-solid);
+    color: var(--ink);
+    font-size: $font-sm;
+    line-height: 1;
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+      border-color: var(--accent-1);
+      color: var(--accent-1);
+    }
+    &:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+  }
+}
+
+.share-count {
+  min-width: 14px;
+  text-align: center;
+  font-size: $font-sm;
+  font-weight: 700;
+}
+
 .q-actions {
   display: flex;
   justify-content: space-between;

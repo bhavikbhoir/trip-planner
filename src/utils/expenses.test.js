@@ -35,6 +35,33 @@ describe('computeBalances', () => {
     const balances = computeBalances([], members)
     expect(Object.values(balances)).toEqual([0, 0, 0, 0])
   })
+
+  it('weights a split member with extra shares — e.g. a +1 counted as 2', () => {
+    // 90 split 4 ways but b carries 2 shares: 5 shares total, 18/share.
+    const expenses = [{ amount: 90, paidBy: 'a', splitBetween: ['a', 'b', 'c', 'd'], shares: { b: 2 } }]
+    const balances = computeBalances(expenses, members)
+    expect(balances.a).toBe(72) // paid 90, owes 1 share (18)
+    expect(balances.b).toBe(-36) // owes 2 shares
+    expect(balances.c).toBe(-18)
+    expect(balances.d).toBe(-18)
+  })
+
+  it('treats a split member missing from shares as 1 share', () => {
+    const expenses = [{ amount: 30, paidBy: 'a', splitBetween: ['a', 'b'], shares: { a: 2 } }]
+    const balances = computeBalances(expenses, members)
+    expect(balances.a).toBe(10) // paid 30, owes 2 of 3 shares (20)
+    expect(balances.b).toBe(-10) // owes 1 of 3 shares
+  })
+
+  it('still nets to zero with mixed shares across several expenses', () => {
+    const expenses = [
+      { amount: 90, paidBy: 'a', splitBetween: ['a', 'b', 'c', 'd'], shares: { b: 2 } },
+      { amount: 20, paidBy: 'c', splitBetween: ['c', 'd'], shares: { d: 3 } },
+    ]
+    const balances = computeBalances(expenses, members)
+    const total = Object.values(balances).reduce((sum, v) => sum + v, 0)
+    expect(total).toBeCloseTo(0, 8)
+  })
 })
 
 describe('simplifyDebts', () => {

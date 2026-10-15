@@ -68,6 +68,18 @@ function nowIso() {
   return new Date().toISOString()
 }
 
+// Mirrors trip-planner-api's shared/expenseShares.js — every split member
+// gets an explicit share count (default 1), anything for someone not in
+// the split is dropped.
+function normalizeShares(shares, split) {
+  const normalized = {}
+  for (const userId of split) {
+    const raw = shares?.[userId]
+    normalized[userId] = Number.isInteger(raw) && raw >= 1 ? raw : 1
+  }
+  return normalized
+}
+
 // Mirrors trip-planner-api's functions/trips/today.js — event times are
 // "H:MMa/p" strings, so a plain string sort would put "10:00a" before "9:40a".
 function timeToMinutes(time) {
@@ -605,6 +617,7 @@ export async function demoRequest(method, path, body) {
         amount: Number(body?.amount) || 0,
         paidBy: body?.paidBy || DEMO_USER.userId,
         splitBetween: split,
+        shares: normalizeShares(body?.shares, split),
         addedBy: DEMO_USER.userId,
         createdAt: nowIso(),
       }
@@ -901,6 +914,7 @@ export async function demoRequest(method, path, body) {
       amount: booking.cost,
       paidBy: body?.paidBy || DEMO_USER.userId,
       splitBetween: split,
+      shares: normalizeShares(body?.shares, split),
       addedBy: DEMO_USER.userId,
       sourceBookingId: bookingId,
       createdAt: nowIso(),

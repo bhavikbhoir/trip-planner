@@ -79,6 +79,7 @@ export default function Bookings() {
   const [convertingId, setConvertingId] = useState(null)
   const [convertPaidBy, setConvertPaidBy] = useState('')
   const [convertSplit, setConvertSplit] = useState([])
+  const [convertShares, setConvertShares] = useState({})
   const [convertError, setConvertError] = useState('')
   const [isConverting, setIsConverting] = useState(false)
 
@@ -158,11 +159,16 @@ export default function Bookings() {
     setConvertingId(booking.bookingId)
     setConvertPaidBy(user?.userId || members[0]?.userId || '')
     setConvertSplit(members.map((m) => m.userId))
+    setConvertShares({})
     setConvertError('')
   }
 
   function toggleConvertSplit(userId) {
     setConvertSplit((s) => (s.includes(userId) ? s.filter((id) => id !== userId) : [...s, userId]))
+  }
+
+  function adjustConvertShare(userId, delta) {
+    setConvertShares((s) => ({ ...s, [userId]: Math.max(1, (s[userId] || 1) + delta) }))
   }
 
   async function handleConvert(bookingId) {
@@ -176,6 +182,7 @@ export default function Bookings() {
       const res = await api.post(`/trips/${tripId}/bookings/${bookingId}/convert-to-expense`, {
         paidBy: convertPaidBy,
         splitBetween: convertSplit,
+        shares: Object.fromEntries(convertSplit.map((id) => [id, convertShares[id] || 1])),
       })
       setBookings((b) => b.map((x) => (x.bookingId === bookingId ? res.booking : x)))
       setConvertingId(null)
@@ -433,6 +440,33 @@ export default function Bookings() {
                               </button>
                             ))}
                           </div>
+                          {convertSplit.length > 0 && (
+                            <div className="share-steppers">
+                              {convertSplit.map((userId) => (
+                                <div className="share-row" key={userId}>
+                                  <span className="share-name">{memberLabel(userId)}</span>
+                                  <span className="share-stepper">
+                                    <button
+                                      type="button"
+                                      aria-label={`Fewer shares for ${memberLabel(userId)}`}
+                                      disabled={(convertShares[userId] || 1) <= 1}
+                                      onClick={() => adjustConvertShare(userId, -1)}
+                                    >
+                                      −
+                                    </button>
+                                    <span className="share-count mono">{convertShares[userId] || 1}</span>
+                                    <button
+                                      type="button"
+                                      aria-label={`More shares for ${memberLabel(userId)}`}
+                                      onClick={() => adjustConvertShare(userId, 1)}
+                                    >
+                                      +
+                                    </button>
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                         <div className="q-actions">
                           <button type="button" className="btn ghost" onClick={() => setConvertingId(null)}>
