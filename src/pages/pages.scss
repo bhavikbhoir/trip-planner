@@ -862,6 +862,7 @@
 .day-head {
   display: flex;
   align-items: baseline;
+  flex-wrap: wrap;
   gap: $space-md;
   margin-bottom: $space-lg;
 
@@ -872,6 +873,19 @@
   .day-date {
     color: var(--ink-dim);
     font-size: $font-sm;
+  }
+  .day-weather {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
+    font-size: $font-xs;
+    color: var(--ink-dim);
+
+    .icon {
+      width: 13px;
+      height: 13px;
+    }
   }
 }
 

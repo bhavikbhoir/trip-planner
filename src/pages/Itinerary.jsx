@@ -69,6 +69,7 @@ export default function Itinerary() {
   const [isGeneratingTips, setIsGeneratingTips] = useState(false)
   const [tipsError, setTipsError] = useState('')
   const [weather, setWeather] = useState(null)
+  const [forecast, setForecast] = useState([])
   const [loadError, setLoadError] = useState('')
 
   const [isGenerating, setIsGenerating] = useState(false)
@@ -135,7 +136,10 @@ export default function Itinerary() {
     // Best-effort — a missing/failed weather fetch shouldn't block the page.
     api
       .get(`/trips/${tripId}/weather`)
-      .then((res) => setWeather(res.weather))
+      .then((res) => {
+        setWeather(res.weather)
+        setForecast(res.forecast || [])
+      })
       .catch(() => setWeather(null))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tripId])
@@ -356,6 +360,7 @@ export default function Itinerary() {
 
   const latestPlan = plans.length ? plans.reduce((a, b) => (b.version > a.version ? b : a)) : null
   const days = latestPlan?.days || []
+  const forecastByDate = new Map(forecast.map((f) => [f.date, f]))
 
   useEffect(() => {
     if (days.length < 2) return undefined
@@ -712,6 +717,12 @@ export default function Itinerary() {
               <div className="day-head" ref={(el) => (dayRefs.current[i] = el)}>
                 <span className="day-num">Day {i + 1}</span>
                 <span className="day-date mono">{day.date}</span>
+                {forecastByDate.has(day.date) && (
+                  <span className="day-weather mono">
+                    <Icon name="sun" />
+                    {forecastByDate.get(day.date).high}°/{forecastByDate.get(day.date).low}°
+                  </span>
+                )}
               </div>
               {day.events.map((rawEv, j) => {
                 const ev = resolveMeal(rawEv)

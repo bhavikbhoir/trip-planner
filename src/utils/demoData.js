@@ -16,6 +16,20 @@ const DEMO_WEATHER = {
   'demo-cabin': { temperature: 61, condition: 'clear sky', city: 'Aspen', icon: '01d' },
 }
 
+// Mirrors the real endpoint's forecast array — a per-day hi/lo for whichever
+// days fall within OpenWeatherMap's ~5-day window. Only seeded for the two
+// demo trips' actual itinerary dates.
+const DEMO_FORECAST = {
+  'demo-bali': [
+    { date: '2026-11-14', high: 89, low: 76, condition: 'scattered thunderstorms', icon: '11d' },
+    { date: '2026-11-15', high: 85, low: 74, condition: 'light rain', icon: '10d' },
+  ],
+  'demo-cabin': [
+    { date: '2026-08-21', high: 61, low: 38, condition: 'clear sky', icon: '01d' },
+    { date: '2026-08-22', high: 58, low: 36, condition: 'few clouds', icon: '02d' },
+  ],
+}
+
 // Mock POST .../advisor/generate responses — there's no Bedrock to call in
 // demo mode, so these are hand-authored against demo-bali's actual seed data
 // (real names/times) rather than generic placeholder text, to look like a
@@ -601,6 +615,7 @@ export async function demoRequest(method, path, body) {
       const cityGuess = (t.trip.destination || '').split(',')[0].trim() || t.trip.destination
       return {
         weather: DEMO_WEATHER[t.trip.tripId] || { temperature: 84, condition: 'scattered clouds', city: cityGuess, icon: '03d' },
+        forecast: DEMO_FORECAST[t.trip.tripId] || [],
       }
     }
     if (segments[2] === 'join' && method === 'POST') {
