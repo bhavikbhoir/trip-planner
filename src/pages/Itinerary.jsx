@@ -8,6 +8,7 @@ import { StaggerContainer, StaggerItem } from '../components/motion'
 import DayMap from '../components/DayMap'
 import TripTabs from '../components/TripTabs'
 import EditTripForm from '../components/EditTripForm'
+import { convertTemp, fmtTemp } from '../utils/units'
 import './pages.scss'
 
 const HTTP_URL_RE = /^https?:\/\//i
@@ -55,6 +56,7 @@ export default function Itinerary() {
   const { tripId } = useParams()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const weatherUnit = user?.weatherUnit || 'imperial'
 
   const [trip, setTrip] = useState(null)
   const [members, setMembers] = useState([])
@@ -598,7 +600,7 @@ export default function Itinerary() {
         <div className="weather-chip glass">
           <Icon name="sun" />
           <span>
-            Current conditions in {weather.city}: {weather.temperature}°F, {weather.condition}
+            Current conditions in {weather.city}: {fmtTemp(weather.temperature, weatherUnit)}, {weather.condition}
           </span>
         </div>
       )}
@@ -720,7 +722,9 @@ export default function Itinerary() {
                 {forecastByDate.has(day.date) && (
                   <span className="day-weather mono">
                     <Icon name="sun" />
-                    {forecastByDate.get(day.date).high}°/{forecastByDate.get(day.date).low}°
+                    {convertTemp(forecastByDate.get(day.date).high, weatherUnit)}°/
+                    {convertTemp(forecastByDate.get(day.date).low, weatherUnit)}°
+                    {weatherUnit === 'metric' ? 'C' : 'F'}
                   </span>
                 )}
               </div>
