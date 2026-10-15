@@ -768,8 +768,20 @@ export async function demoRequest(method, path, body) {
     }
 
     if (segments[2] === 'expenses' && method === 'DELETE') {
-      t.expenses = (t.expenses || []).filter((e) => e.expenseId !== segments[3])
-      return { deleted: true, expenseId: segments[3] }
+      const expenseId = segments[3]
+      const expense = (t.expenses || []).find((e) => e.expenseId === expenseId)
+      t.expenses = (t.expenses || []).filter((e) => e.expenseId !== expenseId)
+      // Mirrors the real backend — deleting an expense that came from
+      // converting a booking clears that booking's marker too, so "Add to
+      // expenses" reappears instead of staying stuck forever.
+      if (expense?.sourceBookingId) {
+        t.bookings = (t.bookings || []).map((b) =>
+          b.bookingId === expense.sourceBookingId && b.convertedExpenseId === expenseId
+            ? { ...b, convertedExpenseId: null }
+            : b
+        )
+      }
+      return { deleted: true, expenseId }
     }
 
     if (segments[2] === 'plan' && segments[3] === 'generate' && method === 'POST') {
@@ -890,6 +902,7 @@ export async function demoRequest(method, path, body) {
       paidBy: body?.paidBy || DEMO_USER.userId,
       splitBetween: split,
       addedBy: DEMO_USER.userId,
+      sourceBookingId: bookingId,
       createdAt: nowIso(),
     }
     t.expenses = [...(t.expenses || []), expense]
