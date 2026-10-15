@@ -871,6 +871,32 @@ export async function demoRequest(method, path, body) {
     }
   }
 
+  // /trips/:tripId/bookings/:bookingId/convert-to-expense
+  if (segments.length === 5 && segments[2] === 'bookings' && segments[4] === 'convert-to-expense' && method === 'POST') {
+    const t = getOr404(segments[1])
+    const bookingId = segments[3]
+    const booking = (t.bookings || []).find((b) => b.bookingId === bookingId)
+    if (!booking) throw notFound()
+    if (booking.convertedExpenseId) throw badRequest('This booking has already been added to expenses')
+    if (booking.cost == null) throw badRequest('This booking has no cost to convert')
+
+    const memberIds = t.members.map((m) => m.userId)
+    const split = Array.isArray(body?.splitBetween) && body.splitBetween.length ? body.splitBetween : memberIds
+    const expenseId = `exp-${Math.random().toString(36).slice(2, 8)}`
+    const expense = {
+      expenseId,
+      description: booking.name,
+      amount: booking.cost,
+      paidBy: body?.paidBy || DEMO_USER.userId,
+      splitBetween: split,
+      addedBy: DEMO_USER.userId,
+      createdAt: nowIso(),
+    }
+    t.expenses = [...(t.expenses || []), expense]
+    t.bookings = t.bookings.map((b) => (b.bookingId === bookingId ? { ...b, convertedExpenseId: expenseId } : b))
+    return { expense, booking: t.bookings.find((b) => b.bookingId === bookingId) }
+  }
+
   throw badRequest(`No demo handler for ${method} ${path}`)
 }
 

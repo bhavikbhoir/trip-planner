@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { api } from '../utils/api'
+import { useAuth } from '../contexts/AuthContext'
 import AppShell from '../components/AppShell'
 import { Icon } from '../components/Icon'
 import { StaggerContainer, StaggerItem } from '../components/motion'
@@ -61,7 +62,9 @@ function buildPrefillFromExtracted(ex) {
 // read-only plan anchors; this is where they're actually managed.
 export default function Bookings() {
   const { tripId } = useParams()
+  const { user } = useAuth()
   const [trip, setTrip] = useState(null)
+  const [members, setMembers] = useState([])
   const [bookings, setBookings] = useState([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
@@ -73,12 +76,24 @@ export default function Bookings() {
   const [extractedPrefill, setExtractedPrefill] = useState(null)
   const [editingId, setEditingId] = useState(null)
 
+  const [convertingId, setConvertingId] = useState(null)
+  const [convertPaidBy, setConvertPaidBy] = useState('')
+  const [convertSplit, setConvertSplit] = useState([])
+  const [convertError, setConvertError] = useState('')
+  const [isConverting, setIsConverting] = useState(false)
+
+  function memberLabel(userId) {
+    if (userId === user?.userId) return 'You'
+    return members.find((m) => m.userId === userId)?.displayName || 'A traveler'
+  }
+
   useEffect(() => {
     setLoading(true)
     api
       .get(`/trips/${tripId}`)
       .then((res) => {
         setTrip(res.trip)
+        setMembers(res.members || [])
         setBookings(res.bookings || [])
       })
       .catch((e) => setLoadError(e.message || 'Could not load bookings.'))
@@ -135,6 +150,39 @@ export default function Bookings() {
       await api.delete(`/trips/${tripId}/bookings/${bookingId}`)
     } catch {
       setBookings(prev)
+    }
+  }
+
+  function startConvert(booking) {
+    setEditingId(null)
+    setConvertingId(booking.bookingId)
+    setConvertPaidBy(user?.userId || members[0]?.userId || '')
+    setConvertSplit(members.map((m) => m.userId))
+    setConvertError('')
+  }
+
+  function toggleConvertSplit(userId) {
+    setConvertSplit((s) => (s.includes(userId) ? s.filter((id) => id !== userId) : [...s, userId]))
+  }
+
+  async function handleConvert(bookingId) {
+    setConvertError('')
+    if (convertSplit.length === 0) {
+      setConvertError('Split it between at least one person.')
+      return
+    }
+    setIsConverting(true)
+    try {
+      const res = await api.post(`/trips/${tripId}/bookings/${bookingId}/convert-to-expense`, {
+        paidBy: convertPaidBy,
+        splitBetween: convertSplit,
+      })
+      setBookings((b) => b.map((x) => (x.bookingId === bookingId ? res.booking : x)))
+      setConvertingId(null)
+    } catch (err) {
+      setConvertError(err.message || 'Could not add this to expenses.')
+    } finally {
+      setIsConverting(false)
     }
   }
 
@@ -268,7 +316,8 @@ export default function Bookings() {
                   )
                 }
                 return (
-                  <StaggerItem key={b.bookingId}>
+                  <Fragment key={b.bookingId}>
+                  <StaggerItem>
                     <div className="booking-ticket panel glass">
                       <span className="ticket-stub">
                         <Icon name={BOOKING_ICONS[b.type] || 'flag'} />
@@ -287,11 +336,18 @@ export default function Bookings() {
                             <Icon name="pin" /> {b.location}
                           </div>
                         )}
-                        {(b.type === 'hotel' && b.breakfastIncluded) || (b.referenceLink && HTTP_URL_RE.test(b.referenceLink)) ? (
+                        {(b.type === 'hotel' && b.breakfastIncluded) ||
+                        b.convertedExpenseId ||
+                        (b.referenceLink && HTTP_URL_RE.test(b.referenceLink)) ? (
                           <div className="ticket-tags">
                             {b.type === 'hotel' && b.breakfastIncluded && (
                               <span className="amenity-badge">
                                 <Icon name="fork" /> Breakfast incl.
+                              </span>
+                            )}
+                            {b.convertedExpenseId && (
+                              <span className="amenity-badge">
+                                <Icon name="check" /> Added to expenses
                               </span>
                             )}
                             {b.referenceLink && HTTP_URL_RE.test(b.referenceLink) && (
@@ -322,12 +378,80 @@ export default function Bookings() {
                           >
                             <Icon name="x" />
                           </button>
+                          {b.cost != null && !b.convertedExpenseId && (
+                            <button type="button" className="btn small ghost" onClick={() => startConvert(b)}>
+                              <Icon name="wallet" />
+                              Add to expenses
+                            </button>
+                          )}
                         </div>
                       </div>
                       <span className="ticket-perf" aria-hidden="true" />
                       <div className="ticket-cost mono">{b.cost != null ? `$${b.cost}` : '—'}</div>
                     </div>
                   </StaggerItem>
+
+                  {convertingId === b.bookingId && (
+                    <StaggerItem key={`${b.bookingId}-convert`}>
+                      <div className="panel glass" style={{ marginBottom: 12, padding: 20 }}>
+                        {convertError && <div className="error-banner">{convertError}</div>}
+                        <p className="eyebrow" style={{ marginBottom: 4 }}>Add to expenses</p>
+                        <p className="q-sub" style={{ marginBottom: 14 }}>
+                          {b.name} — ${b.cost}
+                        </p>
+                        <div className="row2">
+                          <div className="field">
+                            <label htmlFor="convertPaidBy">Paid by</label>
+                            <div className="field-input">
+                              <Icon name="users" />
+                              <select
+                                id="convertPaidBy"
+                                value={convertPaidBy}
+                                onChange={(e) => setConvertPaidBy(e.target.value)}
+                              >
+                                {members.map((m) => (
+                                  <option key={m.userId} value={m.userId}>
+                                    {memberLabel(m.userId)}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="field">
+                          <label>Split between</label>
+                          <div className="chip-grid">
+                            {members.map((m) => (
+                              <button
+                                key={m.userId}
+                                type="button"
+                                className="chip"
+                                aria-pressed={convertSplit.includes(m.userId)}
+                                onClick={() => toggleConvertSplit(m.userId)}
+                              >
+                                {memberLabel(m.userId)}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="q-actions">
+                          <button type="button" className="btn ghost" onClick={() => setConvertingId(null)}>
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            className="btn accent"
+                            disabled={isConverting}
+                            onClick={() => handleConvert(b.bookingId)}
+                          >
+                            <Icon name="check" />
+                            {isConverting ? 'Adding…' : 'Add to expenses'}
+                          </button>
+                        </div>
+                      </div>
+                    </StaggerItem>
+                  )}
+                  </Fragment>
                 )
               })}
             </StaggerContainer>

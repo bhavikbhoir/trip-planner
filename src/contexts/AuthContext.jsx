@@ -42,10 +42,13 @@ async function loadUserWithDisplayName() {
 // The account's saved theme (if any) wins over whatever's currently applied
 // locally — local storage is just the fast, pre-login-aware guess. Silent
 // on failure: the local/system-preference theme still works fine either way.
-async function syncThemeFromAccount() {
+// Also picks up weatherUnit here since it's the same /me call either way —
+// `setUser` merges it onto whatever's already there rather than overwriting.
+async function syncAccountPrefs(setUser) {
   try {
     const res = await api.get('/me')
     if (res.theme) setStoredTheme(res.theme)
+    setUser((u) => (u ? { ...u, weatherUnit: res.weatherUnit || 'imperial' } : u))
   } catch {
     // best-effort
   }
@@ -91,7 +94,7 @@ export function AuthProvider({ children }) {
     loadUserWithDisplayName()
       .then((cognitoUser) => {
         setUser(cognitoUser)
-        syncThemeFromAccount()
+        syncAccountPrefs(setUser)
       })
       .catch(() => setUser(null))
       .finally(() => setIsLoading(false))
@@ -107,7 +110,7 @@ export function AuthProvider({ children }) {
     await amplifySignIn({ username: email, password })
     const cognitoUser = await loadUserWithDisplayName()
     setUser(cognitoUser)
-    syncThemeFromAccount()
+    syncAccountPrefs(setUser)
     return cognitoUser
   }
 
@@ -175,6 +178,20 @@ export function AuthProvider({ children }) {
     }
   }
 
+  // Same shape as updateTheme, but the value lives on `user` (not
+  // localStorage) since it doesn't need theme's before-first-paint trick —
+  // it only affects number formatting on specific pages, not a full-page
+  // flash of the wrong look.
+  async function updateWeatherUnit(weatherUnit) {
+    setUser((u) => (u ? { ...u, weatherUnit } : u))
+    if (isDemoMode()) return
+    try {
+      await api.patch('/me/weatherUnit', { weatherUnit })
+    } catch {
+      // best-effort
+    }
+  }
+
   return (
     <AuthContext.Provider
       value={{
@@ -192,6 +209,7 @@ export function AuthProvider({ children }) {
         enterDemo,
         updateDisplayName,
         updateTheme,
+        updateWeatherUnit,
       }}
     >
       {children}

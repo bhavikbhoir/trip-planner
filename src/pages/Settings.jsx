@@ -5,11 +5,12 @@ import { Icon } from '../components/Icon'
 import './pages.scss'
 
 export default function Settings() {
-  const { user, updateDisplayName } = useAuth()
+  const { user, updateDisplayName, updateWeatherUnit } = useAuth()
   const [name, setName] = useState(user?.displayName || '')
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState('')
   const [saved, setSaved] = useState(false)
+  const weatherUnit = user?.weatherUnit || 'imperial'
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -54,6 +55,33 @@ export default function Settings() {
           </button>
         </div>
       </form>
+
+      <div className="panel glass" style={{ maxWidth: 420, marginTop: 16 }}>
+        <div className="field">
+          <label>Temperature units</label>
+          <div className="chip-grid">
+            <button
+              type="button"
+              className="chip"
+              aria-pressed={weatherUnit === 'imperial'}
+              onClick={() => updateWeatherUnit('imperial')}
+            >
+              °F
+            </button>
+            <button
+              type="button"
+              className="chip"
+              aria-pressed={weatherUnit === 'metric'}
+              onClick={() => updateWeatherUnit('metric')}
+            >
+              °C
+            </button>
+          </div>
+          <p className="q-sub" style={{ marginTop: 6 }}>
+            Applies to weather shown on any trip you're part of.
+          </p>
+        </div>
+      </div>
     </AppShell>
   )
 }
