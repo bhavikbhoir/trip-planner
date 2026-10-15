@@ -9,6 +9,14 @@ const NODES = [
 ]
 const ARC_PAIRS = [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [0, 4]]
 
+// A small aircraft silhouette (nose at the top) traveling each arc in place
+// of a plain dot — fuselage, swept wings, tail fins, same shape family as a
+// standard flight-tracker icon. Drawn as a canvas path, not an image asset.
+const PLANE_PATH = [
+  [0, -7], [1.3, -3], [6, 0.5], [6, 2], [1.3, 0.8], [0.9, 4.5], [2.6, 6], [2.6, 7],
+  [0, 6], [-2.6, 7], [-2.6, 6], [-0.9, 4.5], [-1.3, 0.8], [-6, 2], [-6, 0.5], [-1.3, -3],
+]
+
 function hexToRgb(hex) {
   const h = hex.replace('#', '').trim()
   const n = parseInt(h.length === 3 ? h.split('').map((c) => c + c).join('') : h, 16)
@@ -73,13 +81,22 @@ export default function AmbientBackground() {
 
         if (!reduceMotion) {
           const pt = pointAt(p0, p1, cp, arc.t, W, H)
+          const ptNext = pointAt(p0, p1, cp, Math.min(arc.t + 0.01, 1), W, H)
+          const heading = Math.atan2(ptNext.y - pt.y, ptNext.x - pt.x)
+
+          ctx.save()
+          ctx.translate(pt.x, pt.y)
+          ctx.rotate(heading + Math.PI / 2)
+          ctx.scale(0.9, 0.9)
           ctx.beginPath()
+          PLANE_PATH.forEach(([px, py], i) => (i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py)))
+          ctx.closePath()
           ctx.fillStyle = `rgba(${r},${g},${b},0.9)`
           ctx.shadowColor = `rgba(${r},${g},${b},0.8)`
           ctx.shadowBlur = 8
-          ctx.arc(pt.x, pt.y, 2.2, 0, Math.PI * 2)
           ctx.fill()
-          ctx.shadowBlur = 0
+          ctx.restore()
+
           arc.t += arc.speed
           if (arc.t > 1) arc.t = 0
         }
