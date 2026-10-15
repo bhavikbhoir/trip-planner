@@ -17,11 +17,42 @@ const BOOKING_LABELS = {
   other: ['Start', 'End'],
 }
 
+const EXTRACT_ACCEPT_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic']
+const EXTRACT_MAX_BYTES = 10 * 1024 * 1024
+
 function fmtDateTime(v) {
   if (!v) return ''
   const d = new Date(v)
   if (Number.isNaN(d.getTime())) return v
   return d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result).split(',')[1] || '')
+    reader.onerror = () => reject(new Error('Could not read that file.'))
+    reader.readAsDataURL(file)
+  })
+}
+
+// The extract endpoint returns loose date/time pieces (whatever it could
+// actually read), not a ready-made datetime-local string — combine them
+// here, defaulting a missing time to noon so the field is never left in a
+// half-valid state the form can't render. All of this is a starting point
+// for the user to review, never saved as-is.
+function buildPrefillFromExtracted(ex) {
+  const combine = (date, time) => (date ? `${date}T${time || '12:00'}` : '')
+  return {
+    type: ['hotel', 'car', 'other'].includes(ex.type) ? ex.type : 'hotel',
+    name: ex.name || '',
+    location: ex.location || '',
+    startDatetime: combine(ex.startDate, ex.startTime),
+    endDatetime: combine(ex.endDate, ex.endTime),
+    confirmation: ex.confirmation || '',
+    cost: ex.cost != null ? String(ex.cost) : '',
+    breakfastIncluded: !!ex.breakfastIncluded,
+  }
 }
 
 // The shared home for a trip's bookings — everyone sees all of them and can
@@ -36,6 +67,10 @@ export default function Bookings() {
   const [loadError, setLoadError] = useState('')
 
   const [showAdd, setShowAdd] = useState(false)
+  const [addMethod, setAddMethod] = useState(null) // null | 'manual' | 'extract'
+  const [extracting, setExtracting] = useState(false)
+  const [extractError, setExtractError] = useState('')
+  const [extractedPrefill, setExtractedPrefill] = useState(null)
   const [editingId, setEditingId] = useState(null)
 
   useEffect(() => {
@@ -52,7 +87,39 @@ export default function Bookings() {
 
   function handleAdded(booking) {
     setBookings((b) => [...b, booking])
+    closeAddFlow()
+  }
+
+  function closeAddFlow() {
     setShowAdd(false)
+    setAddMethod(null)
+    setExtractedPrefill(null)
+    setExtractError('')
+  }
+
+  async function handleFileSelected(e) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    if (!EXTRACT_ACCEPT_TYPES.includes(file.type)) {
+      setExtractError('Please upload a JPEG, PNG, WebP, or HEIC image.')
+      return
+    }
+    if (file.size > EXTRACT_MAX_BYTES) {
+      setExtractError('Image too large — maximum 10 MB.')
+      return
+    }
+    setExtractError('')
+    setExtracting(true)
+    try {
+      const content = await fileToBase64(file)
+      const res = await api.post(`/trips/${tripId}/bookings/extract`, { content, mediaType: file.type })
+      setExtractedPrefill(buildPrefillFromExtracted(res.extracted || {}))
+    } catch (err) {
+      setExtractError(err.message || 'Could not read that image — try again, or add it manually.')
+    } finally {
+      setExtracting(false)
+    }
   }
 
   function handleUpdated(booking) {
@@ -89,7 +156,8 @@ export default function Bookings() {
             type="button"
             onClick={() => {
               setEditingId(null)
-              setShowAdd((s) => !s)
+              if (showAdd) closeAddFlow()
+              else setShowAdd(true)
             }}
           >
             <Icon name="plus" />
@@ -110,9 +178,69 @@ export default function Bookings() {
 
       {!loading && !loadError && (
         <>
-          {showAdd && (
+          {showAdd && addMethod === null && (
+            <div className="panel glass add-method-panel" style={{ marginBottom: 16 }}>
+              <p className="eyebrow" style={{ marginBottom: 12 }}>Add a booking</p>
+              <div className="add-method-row">
+                <button type="button" className="add-method-card" onClick={() => setAddMethod('extract')}>
+                  <Icon name="sparkle" />
+                  <span className="t">Extract from image</span>
+                  <span className="s">Upload a screenshot or photo</span>
+                </button>
+                <button type="button" className="add-method-card" onClick={() => setAddMethod('manual')}>
+                  <Icon name="sliders" />
+                  <span className="t">Add manually</span>
+                  <span className="s">Fill in the details yourself</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {showAdd && addMethod === 'manual' && (
             <div style={{ marginBottom: 16 }}>
-              <BookingForm tripId={tripId} onSaved={handleAdded} onCancel={() => setShowAdd(false)} />
+              <BookingForm tripId={tripId} onSaved={handleAdded} onCancel={() => setAddMethod(null)} />
+            </div>
+          )}
+
+          {showAdd && addMethod === 'extract' && !extractedPrefill && (
+            <div className="panel glass" style={{ marginBottom: 16, padding: 20 }}>
+              {extractError && <div className="error-banner">{extractError}</div>}
+              <p className="eyebrow" style={{ marginBottom: 8 }}>Upload a confirmation image</p>
+              <p className="q-sub" style={{ marginBottom: 14 }}>
+                A screenshot or photo of the booking confirmation — hotel, car rental, or similar.
+              </p>
+              <label className={`file-drop${extracting ? ' busy' : ''}`}>
+                <Icon name={extracting ? 'refresh' : 'plus'} />
+                {extracting ? 'Reading image…' : 'Choose an image'}
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/heic"
+                  hidden
+                  disabled={extracting}
+                  onChange={handleFileSelected}
+                />
+              </label>
+              <button type="button" className="btn ghost" style={{ marginTop: 14 }} onClick={() => setAddMethod(null)}>
+                Back
+              </button>
+            </div>
+          )}
+
+          {showAdd && addMethod === 'extract' && extractedPrefill && (
+            <div style={{ marginBottom: 16 }}>
+              <div className="notice-banner">
+                <Icon name="sparkle" />
+                Pre-filled from your image — review the details below before saving.
+              </div>
+              <BookingForm
+                tripId={tripId}
+                prefill={extractedPrefill}
+                onSaved={handleAdded}
+                onCancel={() => {
+                  setAddMethod(null)
+                  setExtractedPrefill(null)
+                }}
+              />
             </div>
           )}
 

@@ -681,6 +681,27 @@ export async function demoRequest(method, path, body) {
   if (segments.length === 4) {
     const t = getOr404(segments[1])
 
+    if (segments[2] === 'bookings' && segments[3] === 'extract' && method === 'POST') {
+      if (!body?.content) throw badRequest('content (base64 image) is required')
+      // No Bedrock to call in demo mode — a fixed, clearly-fake extraction
+      // result so the review-before-saving flow is actually visible here,
+      // same spirit as DEMO_WEATHER/DEMO_FORECAST above.
+      return {
+        extracted: {
+          type: 'hotel',
+          name: 'Sample Hotel (from your image)',
+          location: '',
+          startDate: t.trip.startDate,
+          startTime: '15:00',
+          endDate: t.trip.endDate,
+          endTime: '11:00',
+          confirmation: '',
+          cost: null,
+          breakfastIncluded: false,
+        },
+      }
+    }
+
     if (segments[2] === 'members' && segments[3] === 'me' && method === 'PATCH') {
       let m = findMember(t, DEMO_USER.userId)
       if (!m) {

@@ -20,17 +20,20 @@ function toLocalInput(v) {
   return String(v).slice(0, 16)
 }
 
-export default function BookingForm({ tripId, booking, onSaved, onCancel }) {
+// `prefill` seeds a brand-new (unsaved) booking — e.g. from the image-
+// extraction flow — without switching the form into edit mode the way
+// `booking` does; it only ever affects initial field values.
+export default function BookingForm({ tripId, booking, prefill, onSaved, onCancel }) {
   const isEdit = !!booking
-  const [type, setType] = useState(booking?.type || 'hotel')
-  const [name, setName] = useState(booking?.name || '')
-  const [location, setLocation] = useState(booking?.location || '')
-  const [startDatetime, setStartDatetime] = useState(toLocalInput(booking?.startDatetime))
-  const [endDatetime, setEndDatetime] = useState(toLocalInput(booking?.endDatetime))
-  const [confirmation, setConfirmation] = useState(booking?.confirmation || '')
-  const [cost, setCost] = useState(booking?.cost != null ? String(booking.cost) : '')
+  const [type, setType] = useState(booking?.type || prefill?.type || 'hotel')
+  const [name, setName] = useState(booking?.name || prefill?.name || '')
+  const [location, setLocation] = useState(booking?.location || prefill?.location || '')
+  const [startDatetime, setStartDatetime] = useState(toLocalInput(booking?.startDatetime || prefill?.startDatetime))
+  const [endDatetime, setEndDatetime] = useState(toLocalInput(booking?.endDatetime || prefill?.endDatetime))
+  const [confirmation, setConfirmation] = useState(booking?.confirmation || prefill?.confirmation || '')
+  const [cost, setCost] = useState(booking?.cost != null ? String(booking.cost) : prefill?.cost || '')
   const [referenceLink, setReferenceLink] = useState(booking?.referenceLink || '')
-  const [breakfastIncluded, setBreakfastIncluded] = useState(!!booking?.breakfastIncluded)
+  const [breakfastIncluded, setBreakfastIncluded] = useState(!!(booking?.breakfastIncluded ?? prefill?.breakfastIncluded))
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
