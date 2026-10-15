@@ -656,6 +656,145 @@
   }
 }
 
+// ── Expenses tab ─────────────────────────────────────────────────────
+.balance-tiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.balance-tile {
+  flex: 1;
+  min-width: 128px;
+  text-align: center;
+  padding: 14px 10px;
+  border-radius: $radius-md;
+  background: var(--surface-solid);
+  border: 1px solid var(--surface-border);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.balance-name {
+  font-size: $font-sm;
+  font-weight: 600;
+  color: var(--ink-dim);
+}
+
+.balance-amount {
+  font-family: $font-mono;
+  font-weight: 700;
+  font-size: 1.2rem;
+
+  &.positive {
+    color: var(--success);
+  }
+  &.negative {
+    color: var(--warn);
+  }
+  &.settled {
+    color: var(--ink-dim);
+  }
+}
+
+.balance-label {
+  font-size: $font-xs;
+  color: var(--ink-dim);
+}
+
+.settle-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: $radius-md;
+  background: var(--surface-solid);
+  border: 1px solid var(--surface-border);
+}
+
+.settle-names {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: $font-sm;
+  font-weight: 600;
+  min-width: 0;
+}
+
+.settle-arrow {
+  width: 13px;
+  height: 13px;
+  color: var(--ink-faint);
+  flex-shrink: 0;
+}
+
+.settle-amount {
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.ledger {
+  padding: 4px 0;
+}
+
+.ledger-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 18px;
+  border-bottom: 1px solid var(--surface-border);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.ledger-icon {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border-radius: $radius-sm;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--data) 16%, transparent);
+  color: var(--data);
+
+  .icon {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+.ledger-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.ledger-desc {
+  font-size: $font-sm;
+  font-weight: 600;
+}
+
+.ledger-meta {
+  font-size: $font-xs;
+  color: var(--ink-dim);
+  margin-top: 2px;
+}
+
+.ledger-amount {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
 .weather-chip {
   display: flex;
   align-items: center;
