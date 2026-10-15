@@ -529,34 +529,37 @@
 }
 
 // ── Bookings management tab ─────────────────────────────────────────
-.booking-row {
+// A "ticket stub" treatment — ticket-like travel documents, not a generic
+// settings list: an icon stub, a perforated divider, cost set apart in a
+// dedicated column.
+.booking-ticket {
   display: flex;
-  align-items: flex-start;
-  gap: $space-md;
-  padding: 16px 18px;
+  align-items: stretch;
+  padding: 0;
   margin-bottom: 12px;
+  overflow: hidden;
 
-  .icon-badge {
-    width: 34px;
-    height: 34px;
-    border-radius: $radius-sm;
+  .ticket-stub {
+    width: 52px;
+    flex-shrink: 0;
     display: grid;
     place-items: center;
-    background: color-mix(in srgb, var(--data) 16%, transparent);
+    background: color-mix(in srgb, var(--data) 10%, transparent);
     color: var(--data);
-    flex-shrink: 0;
 
     .icon {
-      width: 16px;
-      height: 16px;
+      width: 20px;
+      height: 20px;
     }
   }
 
-  .booking-info {
+  .ticket-body {
     flex: 1;
     min-width: 0;
+    padding: 14px 16px;
   }
-  .booking-name {
+
+  .ticket-name {
     font-size: $font-md;
     font-weight: 700;
     display: flex;
@@ -564,6 +567,14 @@
     flex-wrap: wrap;
     gap: 8px;
   }
+
+  .ticket-conf {
+    font-size: $font-xs;
+    color: var(--ink-dim);
+    letter-spacing: 0.03em;
+    margin-top: 3px;
+  }
+
   .booking-type {
     font-size: $font-xs;
     font-weight: 700;
@@ -574,10 +585,22 @@
     border-radius: 999px;
     background: color-mix(in srgb, var(--ink-dim) 14%, transparent);
   }
+
+  .note {
+    margin-top: 6px;
+  }
   .note .icon {
     width: 11px;
     height: 11px;
     margin-right: 2px;
+  }
+
+  .ticket-tags {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
   }
 
   .amenity-badge {
@@ -601,15 +624,34 @@
     display: flex;
     align-items: center;
     gap: 6px;
+    margin-top: 10px;
+  }
+
+  .ticket-perf {
+    width: 0;
     flex-shrink: 0;
+    border-left: 1.5px dashed var(--surface-border);
+    margin: 10px 0;
+  }
+
+  .ticket-cost {
+    width: 72px;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    font-size: $font-sm;
+    font-weight: 700;
   }
 
   @include mobile {
-    flex-wrap: wrap;
-
-    .booking-actions {
-      width: 100%;
-      justify-content: flex-end;
+    .ticket-stub {
+      width: 40px;
+    }
+    .ticket-cost {
+      width: 56px;
+    }
+    .ticket-body {
+      padding: 12px 10px;
     }
   }
 }

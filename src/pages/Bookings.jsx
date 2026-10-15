@@ -141,21 +141,16 @@ export default function Bookings() {
                 }
                 return (
                   <StaggerItem key={b.bookingId}>
-                    <div className="booking-row panel glass">
-                      <span className="icon-badge">
+                    <div className="booking-ticket panel glass">
+                      <span className="ticket-stub">
                         <Icon name={BOOKING_ICONS[b.type] || 'flag'} />
                       </span>
-                      <div className="booking-info">
-                        <div className="booking-name">
+                      <div className="ticket-body">
+                        <div className="ticket-name">
                           {b.name}
                           <span className="booking-type">{BOOKING_TYPE_LABEL[b.type] || 'Other'}</span>
-                          {b.cost != null && <span className="event-cost mono">${b.cost}</span>}
-                          {b.type === 'hotel' && b.breakfastIncluded && (
-                            <span className="amenity-badge">
-                              <Icon name="fork" /> Breakfast incl.
-                            </span>
-                          )}
                         </div>
+                        {b.confirmation && <div className="ticket-conf mono">{b.confirmation}</div>}
                         <div className="note">
                           {startLabel} {fmtDateTime(b.startDatetime)} · {endLabel} {fmtDateTime(b.endDatetime)}
                         </div>
@@ -164,10 +159,13 @@ export default function Bookings() {
                             <Icon name="pin" /> {b.location}
                           </div>
                         )}
-                        {(b.confirmation || (b.referenceLink && HTTP_URL_RE.test(b.referenceLink))) && (
-                          <div className="note">
-                            {b.confirmation && <>conf #{b.confirmation}</>}
-                            {b.confirmation && b.referenceLink && HTTP_URL_RE.test(b.referenceLink) && ' · '}
+                        {(b.type === 'hotel' && b.breakfastIncluded) || (b.referenceLink && HTTP_URL_RE.test(b.referenceLink)) ? (
+                          <div className="ticket-tags">
+                            {b.type === 'hotel' && b.breakfastIncluded && (
+                              <span className="amenity-badge">
+                                <Icon name="fork" /> Breakfast incl.
+                              </span>
+                            )}
                             {b.referenceLink && HTTP_URL_RE.test(b.referenceLink) && (
                               <a href={b.referenceLink} target="_blank" rel="noopener noreferrer" className="ref-link">
                                 <Icon name="link" />
@@ -175,29 +173,31 @@ export default function Bookings() {
                               </a>
                             )}
                           </div>
-                        )}
+                        ) : null}
+                        <div className="booking-actions">
+                          <button
+                            type="button"
+                            className="btn small ghost"
+                            onClick={() => {
+                              setShowAdd(false)
+                              setEditingId(b.bookingId)
+                            }}
+                          >
+                            <Icon name="sliders" />
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            className="btn small ghost"
+                            aria-label={`Delete booking: ${b.name}`}
+                            onClick={() => handleDelete(b.bookingId)}
+                          >
+                            <Icon name="x" />
+                          </button>
+                        </div>
                       </div>
-                      <div className="booking-actions">
-                        <button
-                          type="button"
-                          className="btn small ghost"
-                          onClick={() => {
-                            setShowAdd(false)
-                            setEditingId(b.bookingId)
-                          }}
-                        >
-                          <Icon name="sliders" />
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          className="btn small ghost"
-                          aria-label={`Delete booking: ${b.name}`}
-                          onClick={() => handleDelete(b.bookingId)}
-                        >
-                          <Icon name="x" />
-                        </button>
-                      </div>
+                      <span className="ticket-perf" aria-hidden="true" />
+                      <div className="ticket-cost mono">{b.cost != null ? `$${b.cost}` : '—'}</div>
                     </div>
                   </StaggerItem>
                 )
