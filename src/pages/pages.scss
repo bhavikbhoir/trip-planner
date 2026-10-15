@@ -580,6 +580,23 @@
     margin-right: 2px;
   }
 
+  .amenity-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: $font-xs;
+    font-weight: 700;
+    padding: 1px 8px;
+    border-radius: 999px;
+    color: var(--success);
+    background: color-mix(in srgb, var(--success) 16%, transparent);
+
+    .icon {
+      width: 11px;
+      height: 11px;
+    }
+  }
+
   .booking-actions {
     display: flex;
     align-items: center;

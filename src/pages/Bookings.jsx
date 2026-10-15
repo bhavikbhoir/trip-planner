@@ -150,6 +150,11 @@ export default function Bookings() {
                           {b.name}
                           <span className="booking-type">{BOOKING_TYPE_LABEL[b.type] || 'Other'}</span>
                           {b.cost != null && <span className="event-cost mono">${b.cost}</span>}
+                          {b.type === 'hotel' && b.breakfastIncluded && (
+                            <span className="amenity-badge">
+                              <Icon name="fork" /> Breakfast incl.
+                            </span>
+                          )}
                         </div>
                         <div className="note">
                           {startLabel} {fmtDateTime(b.startDatetime)} · {endLabel} {fmtDateTime(b.endDatetime)}
