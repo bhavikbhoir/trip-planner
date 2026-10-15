@@ -392,7 +392,7 @@ export default function Bookings() {
                   </StaggerItem>
 
                   {convertingId === b.bookingId && (
-                    <StaggerItem key={`${b.bookingId}-convert`}>
+                    <div key={`${b.bookingId}-convert`}>
                       <div className="panel glass" style={{ marginBottom: 12, padding: 20 }}>
                         {convertError && <div className="error-banner">{convertError}</div>}
                         <p className="eyebrow" style={{ marginBottom: 4 }}>Add to expenses</p>
@@ -449,7 +449,7 @@ export default function Bookings() {
                           </button>
                         </div>
                       </div>
-                    </StaggerItem>
+                    </div>
                   )}
                   </Fragment>
                 )
