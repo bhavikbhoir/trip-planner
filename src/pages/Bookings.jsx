@@ -309,17 +309,27 @@ export default function Bookings() {
               {sorted.map((b) => {
                 const [startLabel, endLabel] = BOOKING_LABELS[b.type] || BOOKING_LABELS.other
                 if (editingId === b.bookingId) {
+                  // Same Fragment(key)-then-StaggerItem shape as the non-editing
+                  // branch below — if the two branches put different element
+                  // types at this array position for the same key (bare
+                  // StaggerItem here vs. Fragment there), React treats it as a
+                  // brand-new element on every edit toggle and remounts a
+                  // fresh StaggerItem, which — like the convert-to-expense
+                  // panel before it — never receives the container's one-time
+                  // animate-in trigger and renders stuck invisible.
                   return (
-                    <StaggerItem key={b.bookingId}>
-                      <div style={{ marginBottom: 16 }}>
-                        <BookingForm
-                          tripId={tripId}
-                          booking={b}
-                          onSaved={handleUpdated}
-                          onCancel={() => setEditingId(null)}
-                        />
-                      </div>
-                    </StaggerItem>
+                    <Fragment key={b.bookingId}>
+                      <StaggerItem>
+                        <div style={{ marginBottom: 16 }}>
+                          <BookingForm
+                            tripId={tripId}
+                            booking={b}
+                            onSaved={handleUpdated}
+                            onCancel={() => setEditingId(null)}
+                          />
+                        </div>
+                      </StaggerItem>
+                    </Fragment>
                   )
                 }
                 return (
