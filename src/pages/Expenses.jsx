@@ -232,11 +232,6 @@ export default function Expenses() {
                     {insights.count} expense{insights.count === 1 ? '' : 's'}
                   </span>
                 </div>
-                <div className="balance-tile">
-                  <span className="balance-name">Average</span>
-                  <span className="balance-amount">{fmtMoney(insights.average)}</span>
-                  <span className="balance-label">per expense</span>
-                </div>
               </div>
               <div className="spend-bars panel glass">
                 {members.map((m) => {

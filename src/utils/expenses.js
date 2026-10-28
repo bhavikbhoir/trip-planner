@@ -48,15 +48,14 @@ export function expenseBreakdown(exp) {
   }))
 }
 
-// Quick stats for the Expenses page — total spend, average per expense, and
-// how much each member has personally fronted (gross amount paid, not their
-// net balance — someone can be the top spender and still be owed money, or
-// vice versa). `topSpenderId` is null when there's nothing to compare
-// (no expenses, or everyone's paid exactly the same).
+// Quick stats for the Expenses page — total spend and how much each member
+// has personally fronted (gross amount paid, not their net balance —
+// someone can be the top spender and still be owed money, or vice versa).
+// `topSpenderId` is null when there's nothing to compare (no expenses, or
+// everyone's paid exactly the same).
 export function expenseInsights(expenses, members) {
   const count = expenses.length
   const total = expenses.reduce((sum, e) => sum + e.amount, 0)
-  const average = count ? total / count : 0
 
   const paidByMember = {}
   for (const m of members) paidByMember[m.userId] = 0
@@ -67,7 +66,7 @@ export function expenseInsights(expenses, members) {
   const ranked = Object.entries(paidByMember).sort((a, b) => b[1] - a[1])
   const topSpenderId = ranked.length && ranked[0][1] > 0 ? ranked[0][0] : null
 
-  return { count, total, average, paidByMember, topSpenderId }
+  return { count, total, paidByMember, topSpenderId }
 }
 
 // Greedy settle-up: repeatedly match the largest creditor with the largest

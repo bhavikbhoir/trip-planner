@@ -145,13 +145,12 @@ describe('expenseInsights', () => {
     expect(result).toEqual({
       count: 0,
       total: 0,
-      average: 0,
       paidByMember: { a: 0, b: 0, c: 0, d: 0 },
       topSpenderId: null,
     })
   })
 
-  it('computes total, average, and who paid the most', () => {
+  it('computes total and who paid the most', () => {
     const expenses = [
       { amount: 60, paidBy: 'a', splitBetween: ['a', 'b'] },
       { amount: 20, paidBy: 'b', splitBetween: ['a', 'b'] },
@@ -160,7 +159,6 @@ describe('expenseInsights', () => {
     const result = expenseInsights(expenses, members)
     expect(result.count).toBe(3)
     expect(result.total).toBe(120)
-    expect(result.average).toBe(40)
     expect(result.paidByMember).toEqual({ a: 100, b: 20, c: 0, d: 0 })
     expect(result.topSpenderId).toBe('a')
   })
