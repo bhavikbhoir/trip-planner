@@ -7,7 +7,7 @@ import { Icon } from '../components/Icon'
 import { StaggerContainer, StaggerItem } from '../components/motion'
 import TripTabs from '../components/TripTabs'
 import ExpenseForm from '../components/ExpenseForm'
-import { computeBalances, simplifyDebts, expenseBreakdown, expenseInsights } from '../utils/expenses'
+import { computeBalances, computeSettleUp, expenseBreakdown, expenseInsights } from '../utils/expenses'
 import './pages.scss'
 
 function fmtMoney(n) {
@@ -145,7 +145,7 @@ export default function Expenses() {
   }
 
   const balances = computeBalances(expenses, members, settlements)
-  const settleUp = simplifyDebts(balances)
+  const settleUp = computeSettleUp(expenses, members, settlements)
   const insights = expenseInsights(expenses, members)
 
   return (

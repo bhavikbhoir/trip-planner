@@ -98,3 +98,38 @@ export function simplifyDebts(balances) {
   }
   return transactions
 }
+
+// The settle-up list shown to the user — not simplifyDebts(balances) fed
+// settlements directly. That would re-simplify the balances *after* each
+// payment, and the greedy matcher has no memory of which pairing it chose
+// last time: paying off "You owe Pallavi $64.80" in full can leave a small
+// remainder that the next pass routes to a totally different creditor
+// (e.g. Pallavi again, or Shrija disappearing), even though the amount is
+// mathematically correct. That reads as broken — paying someone shouldn't
+// make the app say you now owe a different person.
+//
+// Instead: simplify the RAW (pre-settlement) debts once to get a stable set
+// of {from, to} pairs, then subtract whatever's been marked paid against
+// each exact pair. A settlement always comes from "Mark as paid" on one of
+// these specific pairs, so this keeps every other pair untouched no matter
+// what happens to this one. (The Balances tiles stay driven by
+// computeBalances(expenses, members, settlements) — each person's own net
+// total is unaffected by any of this; only which pairings make up the
+// settle-up list is.)
+export function computeSettleUp(expenses, members, settlements = []) {
+  const rawBalances = computeBalances(expenses, members)
+  const base = simplifyDebts(rawBalances)
+
+  const paidByPair = {}
+  for (const s of settlements) {
+    const key = `${s.fromUserId}→${s.toUserId}`
+    paidByPair[key] = (paidByPair[key] || 0) + s.amount
+  }
+
+  return base
+    .map((t) => ({
+      ...t,
+      amount: Math.round((t.amount - (paidByPair[`${t.from}→${t.to}`] || 0)) * 100) / 100,
+    }))
+    .filter((t) => t.amount > 0.01)
+}

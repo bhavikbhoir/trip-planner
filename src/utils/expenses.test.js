@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { computeBalances, simplifyDebts, expenseBreakdown, expenseInsights } from './expenses'
+import { computeBalances, simplifyDebts, expenseBreakdown, expenseInsights, computeSettleUp } from './expenses'
 
 const members = [{ userId: 'a' }, { userId: 'b' }, { userId: 'c' }, { userId: 'd' }]
 
@@ -166,5 +166,53 @@ describe('expenseInsights', () => {
   it('has no top spender when nobody has paid for anything', () => {
     const result = expenseInsights([], members)
     expect(result.topSpenderId).toBeNull()
+  })
+})
+
+describe('computeSettleUp', () => {
+  // One debtor (a) owing two creditors (b: 50, c: 3).
+  const expenses = [
+    { amount: 100, paidBy: 'b', splitBetween: ['a', 'b'] },
+    { amount: 6, paidBy: 'c', splitBetween: ['a', 'c'] },
+  ]
+
+  it('matches plain simplifyDebts when there are no settlements', () => {
+    const balances = computeBalances(expenses, members)
+    expect(computeSettleUp(expenses, members, [])).toEqual(simplifyDebts(balances))
+  })
+
+  it('fully paying one pair removes only that pair, leaving others untouched', () => {
+    // This is the exact bug: paying off "a owes b $50" in full must not
+    // reroute a's remaining debt onto c, or make c's pair disappear.
+    const settlements = [{ fromUserId: 'a', toUserId: 'b', amount: 50 }]
+    expect(computeSettleUp(expenses, members, settlements)).toEqual([{ from: 'a', to: 'c', amount: 3 }])
+  })
+
+  it('a partial payment reduces just that pair, leaving the rest alone', () => {
+    const settlements = [{ fromUserId: 'a', toUserId: 'b', amount: 20 }]
+    const result = computeSettleUp(expenses, members, settlements)
+    expect(result).toEqual([
+      { from: 'a', to: 'b', amount: 30 },
+      { from: 'a', to: 'c', amount: 3 },
+    ])
+  })
+
+  it('a payment larger than the pair owes clears it without going negative', () => {
+    const settlements = [{ fromUserId: 'a', toUserId: 'b', amount: 60 }]
+    expect(computeSettleUp(expenses, members, settlements)).toEqual([{ from: 'a', to: 'c', amount: 3 }])
+  })
+
+  it('several settlements against the same pair accumulate', () => {
+    const settlements = [
+      { fromUserId: 'a', toUserId: 'b', amount: 20 },
+      { fromUserId: 'a', toUserId: 'b', amount: 30 },
+    ]
+    expect(computeSettleUp(expenses, members, settlements)).toEqual([{ from: 'a', to: 'c', amount: 3 }])
+  })
+
+  it('a settlement for a pair that no longer appears in the base list is ignored, not applied elsewhere', () => {
+    const settlements = [{ fromUserId: 'a', toUserId: 'd', amount: 10 }]
+    const balances = computeBalances(expenses, members)
+    expect(computeSettleUp(expenses, members, settlements)).toEqual(simplifyDebts(balances))
   })
 })
