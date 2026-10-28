@@ -109,6 +109,18 @@ describe('simplifyDebts', () => {
     const result = simplifyDebts({ a: 33.335, b: -33.335 })
     expect(result[0].amount).toBe(33.34)
   })
+
+  it("a debtor split across two creditors always sums to exactly their own displayed balance", () => {
+    // Rounding each transaction independently (64.795 -> 64.80, 2.515 ->
+    // 2.52) sums to 67.32, a cent more than the 67.31 "you" actually owe —
+    // this is the exact bug reported: balance tile says $2.51 remaining,
+    // settle-up says $2.52. The last transaction for a debtor must absorb
+    // the rounding remainder instead of being rounded independently.
+    const balances = { you: -67.31, pallavi: 64.795, shrija: 2.515 }
+    const result = simplifyDebts(balances)
+    const youTotal = result.filter((t) => t.from === 'you').reduce((sum, t) => sum + t.amount, 0)
+    expect(youTotal).toBeCloseTo(67.31, 2)
+  })
 })
 
 describe('expenseBreakdown', () => {

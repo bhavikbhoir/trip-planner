@@ -72,6 +72,18 @@ export function expenseInsights(expenses, members) {
 // Greedy settle-up: repeatedly match the largest creditor with the largest
 // debtor. Not guaranteed minimal in every edge case, but close to it and
 // simple — good enough for a trip-sized group, not a general min-transfers solver.
+//
+// A debtor can land multiple transactions (split across several creditors).
+// Rounding each one to the nearest cent independently can make them sum to a
+// cent off from that debtor's own once-rounded total — e.g. $64.795 + $2.515
+// each round "correctly" to $64.80 + $2.52, which is $67.32, a cent more
+// than their actual $67.31 owed. That mismatch is exactly what shows up as
+// "the balance tile says $2.51 but settle-up says $2.52": two different
+// numbers for what should be the same debt. The running `debtor.amount` stays
+// full-precision throughout (only the *displayed* amount is rounded), so
+// each debtor's last transaction is set to "their target total minus what's
+// already been shown for them" instead of being rounded independently —
+// guaranteeing their transactions always add up to exactly their balance.
 export function simplifyDebts(balances) {
   const EPSILON = 0.01
   const creditors = []
@@ -83,6 +95,11 @@ export function simplifyDebts(balances) {
   creditors.sort((a, b) => b.amount - a.amount)
   debtors.sort((a, b) => b.amount - a.amount)
 
+  for (const d of debtors) {
+    d.target = Math.round(d.amount * 100) / 100
+    d.shown = 0
+  }
+
   const transactions = []
   let i = 0
   let j = 0
@@ -90,10 +107,15 @@ export function simplifyDebts(balances) {
     const debtor = debtors[i]
     const creditor = creditors[j]
     const amount = Math.min(debtor.amount, creditor.amount)
-    transactions.push({ from: debtor.userId, to: creditor.userId, amount: Math.round(amount * 100) / 100 })
     debtor.amount -= amount
     creditor.amount -= amount
-    if (debtor.amount < EPSILON) i++
+    const isLastForDebtor = debtor.amount < EPSILON
+    const displayAmount = isLastForDebtor
+      ? Math.round((debtor.target - debtor.shown) * 100) / 100
+      : Math.round(amount * 100) / 100
+    debtor.shown += displayAmount
+    transactions.push({ from: debtor.userId, to: creditor.userId, amount: displayAmount })
+    if (isLastForDebtor) i++
     if (creditor.amount < EPSILON) j++
   }
   return transactions
