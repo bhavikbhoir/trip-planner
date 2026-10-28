@@ -532,6 +532,7 @@ export async function demoRequest(method, path, body) {
         eventSwaps: t.eventSwaps || [],
         picks: t.picks || [],
         expenses: t.expenses || [],
+        settlements: t.settlements || [],
         tips: t.tips || [],
         feedback: t.feedback || [],
       }
@@ -623,6 +624,26 @@ export async function demoRequest(method, path, body) {
       }
       t.expenses = [...(t.expenses || []), expense]
       return { expense }
+    }
+    if (segments[2] === 'settlements' && method === 'POST') {
+      const memberIds = t.members.map((m) => m.userId)
+      const { fromUserId, toUserId, amount, method: payMethod } = body || {}
+      if (!fromUserId || !memberIds.includes(fromUserId)) throw badRequest('fromUserId must be a member of this trip')
+      if (!toUserId || !memberIds.includes(toUserId)) throw badRequest('toUserId must be a member of this trip')
+      if (fromUserId === toUserId) throw badRequest('fromUserId and toUserId must be different members')
+      if (typeof amount !== 'number' || amount <= 0) throw badRequest('amount must be a positive number')
+      if (!['cash', 'online'].includes(payMethod)) throw badRequest('method must be one of cash, online')
+      const settlement = {
+        settlementId: `stl-${Math.random().toString(36).slice(2, 8)}`,
+        fromUserId,
+        toUserId,
+        amount,
+        method: payMethod,
+        markedBy: DEMO_USER.userId,
+        markedAt: nowIso(),
+      }
+      t.settlements = [...(t.settlements || []), settlement]
+      return { settlement }
     }
     if (segments[2] === 'weather' && method === 'GET') {
       const cityGuess = (t.trip.destination || '').split(',')[0].trim() || t.trip.destination
@@ -818,6 +839,12 @@ export async function demoRequest(method, path, body) {
         )
       }
       return { deleted: true, expenseId }
+    }
+
+    if (segments[2] === 'settlements' && method === 'DELETE') {
+      const settlementId = segments[3]
+      t.settlements = (t.settlements || []).filter((s) => s.settlementId !== settlementId)
+      return { deleted: true, settlementId }
     }
 
     if (segments[2] === 'plan' && segments[3] === 'generate' && method === 'POST') {

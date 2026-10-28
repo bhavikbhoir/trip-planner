@@ -45,6 +45,7 @@ export default function Recap() {
   const [eventSkips, setEventSkips] = useState([])
   const [eventSwaps, setEventSwaps] = useState([])
   const [expenses, setExpenses] = useState([])
+  const [settlements, setSettlements] = useState([])
   const [feedback, setFeedback] = useState([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
@@ -66,6 +67,7 @@ export default function Recap() {
     setEventSkips(res.eventSkips || [])
     setEventSwaps(res.eventSwaps || [])
     setExpenses(res.expenses || [])
+    setSettlements(res.settlements || [])
     setFeedback(res.feedback || [])
     const mine = (res.feedback || []).find((f) => f.userId === user?.userId)
     if (mine) {
@@ -151,7 +153,7 @@ export default function Recap() {
     ...eventSwaps.map((s) => ({ ...s, kind: 'swapped' })),
   ].sort((a, b) => (eventById.get(a.eventId)?.date || '').localeCompare(eventById.get(b.eventId)?.date || ''))
 
-  const balances = computeBalances(expenses, members)
+  const balances = computeBalances(expenses, members, settlements)
   const settleUp = simplifyDebts(balances)
 
   const isCompleted = !!trip?.completedAt
