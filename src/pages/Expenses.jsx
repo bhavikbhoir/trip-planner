@@ -6,7 +6,8 @@ import AppShell from '../components/AppShell'
 import { Icon } from '../components/Icon'
 import { StaggerContainer, StaggerItem } from '../components/motion'
 import TripTabs from '../components/TripTabs'
-import { computeBalances, simplifyDebts } from '../utils/expenses'
+import ExpenseForm from '../components/ExpenseForm'
+import { computeBalances, simplifyDebts, expenseBreakdown } from '../utils/expenses'
 import './pages.scss'
 
 function fmtMoney(n) {
@@ -23,13 +24,8 @@ export default function Expenses() {
   const [loadError, setLoadError] = useState('')
 
   const [showForm, setShowForm] = useState(false)
-  const [description, setDescription] = useState('')
-  const [amount, setAmount] = useState('')
-  const [paidBy, setPaidBy] = useState('')
-  const [splitBetween, setSplitBetween] = useState([])
-  const [shares, setShares] = useState({})
-  const [formError, setFormError] = useState('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [editingId, setEditingId] = useState(null)
+  const [expandedId, setExpandedId] = useState(null)
 
   function memberLabel(userId) {
     if (userId === user?.userId) return 'You'
@@ -69,53 +65,20 @@ export default function Expenses() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tripId])
 
-  useEffect(() => {
-    if (!showForm) return
-    setPaidBy(user?.userId || members[0]?.userId || '')
-    setSplitBetween(members.map((m) => m.userId))
-    setShares({})
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showForm])
-
-  function toggleSplit(userId) {
-    setSplitBetween((s) => (s.includes(userId) ? s.filter((id) => id !== userId) : [...s, userId]))
+  function handleAdded(expense) {
+    setExpenses((ex) => [...ex, expense])
+    setShowForm(false)
   }
 
-  function adjustShare(userId, delta) {
-    setShares((s) => ({ ...s, [userId]: Math.max(1, (s[userId] || 1) + delta) }))
-  }
-
-  async function handleAddExpense(e) {
-    e.preventDefault()
-    setFormError('')
-    const amountNum = Number(amount)
-    if (!description.trim()) return setFormError('Add a description.')
-    if (!amountNum || amountNum <= 0) return setFormError('Enter an amount greater than 0.')
-    if (splitBetween.length === 0) return setFormError('Split it between at least one person.')
-
-    setIsSubmitting(true)
-    try {
-      const res = await api.post(`/trips/${tripId}/expenses`, {
-        description: description.trim(),
-        amount: amountNum,
-        paidBy,
-        splitBetween,
-        shares: Object.fromEntries(splitBetween.map((id) => [id, shares[id] || 1])),
-      })
-      setExpenses((ex) => [...ex, res.expense])
-      setDescription('')
-      setAmount('')
-      setShowForm(false)
-    } catch (err) {
-      setFormError(err.message || 'Could not add that expense.')
-    } finally {
-      setIsSubmitting(false)
-    }
+  function handleUpdated(expense) {
+    setExpenses((ex) => ex.map((e) => (e.expenseId === expense.expenseId ? expense : e)))
+    setEditingId(null)
   }
 
   async function handleDelete(expenseId) {
     const prev = expenses
     setExpenses((ex) => ex.filter((e) => e.expenseId !== expenseId))
+    if (editingId === expenseId) setEditingId(null)
     try {
       await api.delete(`/trips/${tripId}/expenses/${expenseId}`)
     } catch {
@@ -137,7 +100,14 @@ export default function Expenses() {
           <h1 className="page-title" style={{ marginTop: 4 }}>{trip?.name || 'Loading…'}</h1>
         </div>
         <div className="itin-actions">
-          <button className="btn small accent" type="button" onClick={() => setShowForm((s) => !s)}>
+          <button
+            className="btn small accent"
+            type="button"
+            onClick={() => {
+              setEditingId(null)
+              setShowForm((s) => !s)
+            }}
+          >
             <Icon name="plus" />
             {showForm ? 'Cancel' : 'Add expense'}
           </button>
@@ -157,105 +127,13 @@ export default function Expenses() {
       {!loading && !loadError && (
         <>
           {showForm && (
-            <form className="panel glass" onSubmit={handleAddExpense}>
-              {formError && <div className="error-banner">{formError}</div>}
-
-              <div className="field">
-                <label htmlFor="expDescription">What was it for?</label>
-                <div className="field-input">
-                  <Icon name="wallet" />
-                  <input
-                    id="expDescription"
-                    required
-                    placeholder="e.g. Dinner at Warung Sopa"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div className="row2">
-                <div className="field">
-                  <label htmlFor="expAmount">Amount</label>
-                  <div className="field-input">
-                    <Icon name="wallet" />
-                    <input
-                      id="expAmount"
-                      type="number"
-                      min="0.01"
-                      step="0.01"
-                      required
-                      value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
-                    />
-                  </div>
-                </div>
-                <div className="field">
-                  <label htmlFor="expPaidBy">Paid by</label>
-                  <div className="field-input">
-                    <Icon name="users" />
-                    <select id="expPaidBy" value={paidBy} onChange={(e) => setPaidBy(e.target.value)}>
-                      {members.map((m) => (
-                        <option key={m.userId} value={m.userId}>
-                          {memberLabel(m.userId)}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              <div className="field">
-                <label>Split between</label>
-                <div className="chip-grid">
-                  {members.map((m) => (
-                    <button
-                      key={m.userId}
-                      type="button"
-                      className="chip"
-                      aria-pressed={splitBetween.includes(m.userId)}
-                      onClick={() => toggleSplit(m.userId)}
-                    >
-                      {memberLabel(m.userId)}
-                    </button>
-                  ))}
-                </div>
-                {splitBetween.length > 0 && (
-                  <div className="share-steppers">
-                    {splitBetween.map((userId) => (
-                      <div className="share-row" key={userId}>
-                        <span className="share-name">{memberLabel(userId)}</span>
-                        <span className="share-stepper">
-                          <button
-                            type="button"
-                            aria-label={`Fewer shares for ${memberLabel(userId)}`}
-                            disabled={(shares[userId] || 1) <= 1}
-                            onClick={() => adjustShare(userId, -1)}
-                          >
-                            −
-                          </button>
-                          <span className="share-count mono">{shares[userId] || 1}</span>
-                          <button
-                            type="button"
-                            aria-label={`More shares for ${memberLabel(userId)}`}
-                            onClick={() => adjustShare(userId, 1)}
-                          >
-                            +
-                          </button>
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="q-actions">
-                <button type="submit" className="btn accent" disabled={isSubmitting}>
-                  {isSubmitting ? 'Adding…' : 'Add expense'}
-                  <Icon name="plus" />
-                </button>
-              </div>
-            </form>
+            <ExpenseForm
+              tripId={tripId}
+              members={members}
+              user={user}
+              onSaved={handleAdded}
+              onCancel={() => setShowForm(false)}
+            />
           )}
 
           <p className="eyebrow" style={{ marginTop: showForm ? 16 : 0, marginBottom: 10 }}>
@@ -312,28 +190,83 @@ export default function Expenses() {
             <StaggerContainer>
               <StaggerItem>
                 <div className="ledger panel glass">
-                  {expenses.map((exp) => (
-                    <div className="ledger-row" key={exp.expenseId}>
-                      <span className="ledger-icon">
-                        <Icon name="wallet" />
-                      </span>
-                      <div className="ledger-info">
-                        <div className="ledger-desc">{exp.description}</div>
-                        <div className="ledger-meta">
-                          Paid by {memberLabel(exp.paidBy)} · {splitLabel(exp)}
+                  {expenses.map((exp) => {
+                    if (editingId === exp.expenseId) {
+                      return (
+                        <div className="ledger-edit" key={exp.expenseId}>
+                          <ExpenseForm
+                            tripId={tripId}
+                            members={members}
+                            user={user}
+                            expense={exp}
+                            onSaved={handleUpdated}
+                            onCancel={() => setEditingId(null)}
+                          />
                         </div>
+                      )
+                    }
+
+                    const expanded = expandedId === exp.expenseId
+                    return (
+                      <div className="ledger-entry" key={exp.expenseId}>
+                        <div className="ledger-row">
+                          <span className="ledger-icon">
+                            <Icon name="wallet" />
+                          </span>
+                          <div className="ledger-info">
+                            <div className="ledger-desc">{exp.description}</div>
+                            <div className="ledger-meta">
+                              Paid by {memberLabel(exp.paidBy)} · {splitLabel(exp)}
+                            </div>
+                          </div>
+                          <span className="ledger-amount mono">{fmtMoney(exp.amount)}</span>
+                        </div>
+                        <div className="ledger-actions">
+                          <button
+                            type="button"
+                            className={`btn small ghost ledger-who-toggle${expanded ? ' open' : ''}`}
+                            aria-expanded={expanded}
+                            onClick={() => setExpandedId(expanded ? null : exp.expenseId)}
+                          >
+                            Who's in
+                            <Icon name="chevron" className="chev" />
+                          </button>
+                          <button
+                            className="btn small ghost"
+                            type="button"
+                            onClick={() => {
+                              setShowForm(false)
+                              setEditingId(exp.expenseId)
+                            }}
+                          >
+                            <Icon name="sliders" />
+                            Edit
+                          </button>
+                          <button
+                            className="btn small ghost"
+                            type="button"
+                            aria-label={`Delete expense: ${exp.description}`}
+                            onClick={() => handleDelete(exp.expenseId)}
+                          >
+                            <Icon name="x" />
+                          </button>
+                        </div>
+                        {expanded && (
+                          <div className="ledger-breakdown">
+                            {expenseBreakdown(exp).map((b) => (
+                              <div className="ledger-breakdown-row" key={b.userId}>
+                                <span>
+                                  {memberLabel(b.userId)}
+                                  {b.shareCount > 1 ? ` · ${b.shareCount} shares` : ''}
+                                </span>
+                                <span className="mono">{fmtMoney(b.amount)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                      <span className="ledger-amount mono">{fmtMoney(exp.amount)}</span>
-                      <button
-                        className="btn small ghost"
-                        type="button"
-                        aria-label={`Delete expense: ${exp.description}`}
-                        onClick={() => handleDelete(exp.expenseId)}
-                      >
-                        <Icon name="x" />
-                      </button>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </StaggerItem>
             </StaggerContainer>

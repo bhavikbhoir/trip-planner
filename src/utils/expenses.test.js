@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { computeBalances, simplifyDebts } from './expenses'
+import { computeBalances, simplifyDebts, expenseBreakdown } from './expenses'
 
 const members = [{ userId: 'a' }, { userId: 'b' }, { userId: 'c' }, { userId: 'd' }]
 
@@ -91,5 +91,33 @@ describe('simplifyDebts', () => {
   it('rounds transaction amounts to the nearest cent', () => {
     const result = simplifyDebts({ a: 33.335, b: -33.335 })
     expect(result[0].amount).toBe(33.34)
+  })
+})
+
+describe('expenseBreakdown', () => {
+  it('splits evenly across every split member when no shares are given', () => {
+    const exp = { amount: 40, splitBetween: ['a', 'b', 'c', 'd'] }
+    expect(expenseBreakdown(exp)).toEqual([
+      { userId: 'a', shareCount: 1, amount: 10 },
+      { userId: 'b', shareCount: 1, amount: 10 },
+      { userId: 'c', shareCount: 1, amount: 10 },
+      { userId: 'd', shareCount: 1, amount: 10 },
+    ])
+  })
+
+  it('weights a member with extra shares', () => {
+    const exp = { amount: 90, splitBetween: ['a', 'b', 'c', 'd'], shares: { b: 2 } }
+    expect(expenseBreakdown(exp)).toEqual([
+      { userId: 'a', shareCount: 1, amount: 18 },
+      { userId: 'b', shareCount: 2, amount: 36 },
+      { userId: 'c', shareCount: 1, amount: 18 },
+      { userId: 'd', shareCount: 1, amount: 18 },
+    ])
+  })
+
+  it('sums back to the original amount within rounding', () => {
+    const exp = { amount: 100, splitBetween: ['a', 'b', 'c'], shares: { a: 2 } }
+    const total = expenseBreakdown(exp).reduce((sum, b) => sum + b.amount, 0)
+    expect(total).toBeCloseTo(100, 1)
   })
 })

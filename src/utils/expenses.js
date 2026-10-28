@@ -21,6 +21,21 @@ export function computeBalances(expenses, members) {
   return balances
 }
 
+// Per-person breakdown for a single expense — how much of the total each
+// split member actually owes, honoring weighted shares the same way
+// computeBalances does. Used to show "who's in on this and for how much"
+// without the reader having to do the share-weighted math themselves.
+export function expenseBreakdown(exp) {
+  const shareCount = (userId) => exp.shares?.[userId] ?? 1
+  const totalShares = exp.splitBetween.reduce((sum, id) => sum + shareCount(id), 0)
+  const perShare = exp.amount / totalShares
+  return exp.splitBetween.map((userId) => ({
+    userId,
+    shareCount: shareCount(userId),
+    amount: Math.round(perShare * shareCount(userId) * 100) / 100,
+  }))
+}
+
 // Greedy settle-up: repeatedly match the largest creditor with the largest
 // debtor. Not guaranteed minimal in every edge case, but close to it and
 // simple — good enough for a trip-sized group, not a general min-transfers solver.

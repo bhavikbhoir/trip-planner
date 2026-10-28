@@ -780,6 +780,29 @@ export async function demoRequest(method, path, body) {
       return { booking: updated }
     }
 
+    if (segments[2] === 'expenses' && method === 'PUT') {
+      const expenseId = segments[3]
+      const idx = (t.expenses || []).findIndex((e) => e.expenseId === expenseId)
+      if (idx < 0) throw badRequest('Expense not found')
+      const memberIds = t.members.map((m) => m.userId)
+      const existing = t.expenses[idx]
+      const payer = body?.paidBy || existing.paidBy
+      if (!memberIds.includes(payer)) throw badRequest('paidBy must be a member of this trip')
+      const split = Array.isArray(body?.splitBetween) && body.splitBetween.length ? body.splitBetween : existing.splitBetween
+      const invalidSplit = split.find((id) => !memberIds.includes(id))
+      if (invalidSplit) throw badRequest(`splitBetween includes a non-member: ${invalidSplit}`)
+      const updated = {
+        ...existing,
+        description: body?.description || existing.description,
+        amount: Number(body?.amount) || existing.amount,
+        paidBy: payer,
+        splitBetween: split,
+        shares: normalizeShares(body?.shares, split),
+      }
+      t.expenses[idx] = updated
+      return { expense: updated }
+    }
+
     if (segments[2] === 'expenses' && method === 'DELETE') {
       const expenseId = segments[3]
       const expense = (t.expenses || []).find((e) => e.expenseId === expenseId)
