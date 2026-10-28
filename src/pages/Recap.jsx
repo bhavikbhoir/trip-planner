@@ -6,7 +6,7 @@ import AppShell from '../components/AppShell'
 import { Icon } from '../components/Icon'
 import { StaggerContainer, StaggerItem } from '../components/motion'
 import TripTabs from '../components/TripTabs'
-import { computeBalances, simplifyDebts } from '../utils/expenses'
+import { computeSettleUp } from '../utils/expenses'
 import './pages.scss'
 
 const MOODS = [
@@ -153,8 +153,7 @@ export default function Recap() {
     ...eventSwaps.map((s) => ({ ...s, kind: 'swapped' })),
   ].sort((a, b) => (eventById.get(a.eventId)?.date || '').localeCompare(eventById.get(b.eventId)?.date || ''))
 
-  const balances = computeBalances(expenses, members, settlements)
-  const settleUp = simplifyDebts(balances)
+  const settleUp = computeSettleUp(expenses, members, settlements)
 
   const isCompleted = !!trip?.completedAt
 
