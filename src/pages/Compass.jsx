@@ -18,15 +18,18 @@ function renderInline(text) {
   })
 }
 
-// No draftId in the URL means "start a new conversation" — create one on
-// the backend, then swap the URL to /compass/:draftId (replace, not push)
-// so a refresh resumes the same draft instead of silently starting another.
+// No draftId in the URL means "open Compass" rather than "start over" —
+// resume the most recently active draft if one exists, same as reopening
+// any chat app. Only create a brand new draft when there's genuinely
+// nothing to resume. Either way the URL gets swapped to /compass/:draftId
+// (replace, not push) so a refresh lands on that same draft directly.
 export default function Compass() {
   const { draftId } = useParams()
   const navigate = useNavigate()
   const [draft, setDraft] = useState(null)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
+  const [isStartingNew, setIsStartingNew] = useState(false)
 
   const [input, setInput] = useState('')
   const [sendError, setSendError] = useState('')
@@ -46,12 +49,33 @@ export default function Compass() {
         if (draftId) {
           const res = await api.get(`/drafts/${draftId}`)
           if (!cancelled) setDraft(res.draft)
-        } else {
-          const res = await api.post('/drafts', {})
+          return
+        }
+
+        // Best-effort — if listing drafts fails for some reason, falling
+        // through to start a new one is better than blocking the whole
+        // page on a step that isn't the core functionality.
+        let resumable = null
+        try {
+          const list = await api.get('/drafts')
+          resumable = (list.drafts || []).find((d) => d.status === 'active') || null
+        } catch {
+          resumable = null
+        }
+
+        if (resumable) {
+          const res = await api.get(`/drafts/${resumable.draftId}`)
           if (!cancelled) {
             setDraft(res.draft)
-            navigate(`/compass/${res.draft.draftId}`, { replace: true })
+            navigate(`/compass/${resumable.draftId}`, { replace: true })
           }
+          return
+        }
+
+        const res = await api.post('/drafts', {})
+        if (!cancelled) {
+          setDraft(res.draft)
+          navigate(`/compass/${res.draft.draftId}`, { replace: true })
         }
       } catch (e) {
         if (!cancelled) setLoadError(e.message || 'Could not start Compass.')
@@ -66,6 +90,21 @@ export default function Compass() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draftId])
+
+  async function handleStartNew() {
+    setIsStartingNew(true)
+    setLoadError('')
+    try {
+      const res = await api.post('/drafts', {})
+      setDraft(res.draft)
+      isFirstScroll.current = true
+      navigate(`/compass/${res.draft.draftId}`, { replace: true })
+    } catch (e) {
+      setLoadError(e.message || 'Could not start a new conversation.')
+    } finally {
+      setIsStartingNew(false)
+    }
+  }
 
   // Jump instantly to the bottom on first load (a resumed draft shouldn't
   // visibly scroll through its whole history), then smooth-scroll for
@@ -112,6 +151,12 @@ export default function Compass() {
     <AppShell>
       <div className="page-head">
         <h1>Compass</h1>
+        {draft && (
+          <button className="btn ghost small" type="button" onClick={handleStartNew} disabled={isStartingNew}>
+            <Icon name="plus" />
+            Start new conversation
+          </button>
+        )}
       </div>
 
       {loading && (
