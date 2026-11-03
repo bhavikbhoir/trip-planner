@@ -95,7 +95,7 @@ function ConnectToClaude() {
 export default function AuthPitch() {
   return (
     <div className="auth-pitch">
-      <p className="eyebrow">Manifest</p>
+      <p className="eyebrow">AI trip planner for groups</p>
       <h1>Plan the trip. Actually agree on it.</h1>
       <p className="sub">
         Manifest turns a group chat spiral into one shared plan — AI drafts the itinerary,
