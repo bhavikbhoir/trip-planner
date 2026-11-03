@@ -1735,7 +1735,13 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  height: min(640px, 70vh);
+  // Fill most of the viewport rather than sit in a small fixed box —
+  // 230px roughly covers the topbar, page heading and app-shell's own
+  // padding above and below it. Floored and capped so it stays usable on
+  // very short screens and doesn't stretch absurdly tall on big monitors.
+  height: calc(100dvh - 230px);
+  min-height: 420px;
+  max-height: 840px;
 }
 
 .compass-thread {
@@ -1751,9 +1757,13 @@
   max-width: 78%;
   padding: 10px 14px;
   border-radius: $radius-md;
-  font-size: $font-sm;
-  line-height: 1.5;
+  font-size: $font-base;
+  line-height: 1.6;
   white-space: pre-wrap;
+
+  strong {
+    font-weight: 700;
+  }
 
   &.assistant {
     align-self: flex-start;
@@ -1821,5 +1831,55 @@
 @media (max-width: $bp-mobile) {
   .compass-bubble {
     max-width: 88%;
+  }
+
+  .compass-promo {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+// A proper callout rather than a small button in the page header — the
+// whole point is to guide someone who doesn't know where to start, so the
+// entry point should say what Compass actually does, not just name it.
+.compass-promo {
+  @include card-hover;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: $space-lg;
+  cursor: pointer;
+
+  .icon-badge {
+    width: 38px;
+    height: 38px;
+    border-radius: $radius-sm;
+    display: grid;
+    place-items: center;
+    background: color-mix(in srgb, var(--accent-1) 14%, transparent);
+    color: var(--accent-1);
+    flex-shrink: 0;
+
+    .icon {
+      width: 18px;
+      height: 18px;
+    }
+  }
+
+  .compass-promo-copy {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .compass-promo-title {
+    font-size: $font-base;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  .compass-promo-sub {
+    font-size: $font-sm;
+    color: var(--ink-dim);
+    margin-top: 2px;
   }
 }

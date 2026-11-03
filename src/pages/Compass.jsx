@@ -5,6 +5,19 @@ import AppShell from '../components/AppShell'
 import { Icon } from '../components/Icon'
 import './pages.scss'
 
+// Haiku formats with markdown (mainly **bold**) even though this renders
+// as plain chat bubbles — rather than fight that in the prompt and lose
+// genuinely useful structure in longer replies, render the one marker it
+// actually uses. Not a general markdown parser, just **bold**.
+function renderInline(text) {
+  return text.split(/(\*\*[^*]+\*\*)/g).map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**') && part.length > 4) {
+      return <strong key={i}>{part.slice(2, -2)}</strong>
+    }
+    return part
+  })
+}
+
 // No draftId in the URL means "start a new conversation" — create one on
 // the backend, then swap the URL to /compass/:draftId (replace, not push)
 // so a refresh resumes the same draft instead of silently starting another.
@@ -20,6 +33,8 @@ export default function Compass() {
   const [isSending, setIsSending] = useState(false)
 
   const threadRef = useRef(null)
+  const inputRef = useRef(null)
+  const isFirstScroll = useRef(true)
 
   useEffect(() => {
     let cancelled = false
@@ -52,9 +67,26 @@ export default function Compass() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draftId])
 
+  // Jump instantly to the bottom on first load (a resumed draft shouldn't
+  // visibly scroll through its whole history), then smooth-scroll for
+  // anything after that — including the typing indicator showing up,
+  // which is its own content change, not just new messages landing.
   useEffect(() => {
-    threadRef.current?.scrollTo({ top: threadRef.current.scrollHeight, behavior: 'smooth' })
-  }, [draft?.messages.length])
+    if (!threadRef.current) return
+    threadRef.current.scrollTo({
+      top: threadRef.current.scrollHeight,
+      behavior: isFirstScroll.current ? 'auto' : 'smooth',
+    })
+    isFirstScroll.current = false
+  }, [draft?.messages.length, isSending])
+
+  // A disabled input loses focus, and it's disabled while a reply is in
+  // flight — so without this, every reply lands with focus dropped and
+  // the next message needs a click to start typing. Refocus whenever the
+  // field becomes typeable again.
+  useEffect(() => {
+    if (!loading && !isSending) inputRef.current?.focus()
+  }, [loading, isSending])
 
   async function handleSend(e) {
     e.preventDefault()
@@ -101,7 +133,7 @@ export default function Compass() {
             )}
             {draft.messages.map((m, i) => (
               <div className={`compass-bubble ${m.role}`} key={i}>
-                {m.content}
+                {renderInline(m.content)}
               </div>
             ))}
             {isSending && (
@@ -119,6 +151,7 @@ export default function Compass() {
             <div className="field-input compass-field">
               <Icon name="compass" />
               <input
+                ref={inputRef}
                 type="text"
                 placeholder="Tell Compass what you're thinking…"
                 value={input}

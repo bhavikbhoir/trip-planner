@@ -382,9 +382,9 @@ let drafts = []
 // as DEMO_TIPS/DEMO_WEATHER above. Cycles through in order, then repeats
 // the last line for anything past a short demo conversation.
 const COMPASS_DEMO_REPLIES = [
-  "Nice. Roughly when were you thinking, and how many days can you actually get away for?",
+  'Nice. Roughly when were you thinking, and how many days can you actually get away for?',
   'Got it. Would you rather keep it easy — somewhere warm, pool and good food — or more active, with hiking or a city to explore?',
-  "Here's an idea: somewhere warm with a short direct flight, hiking by day and a nice dinner each night — Scottsdale or San Juan both fit. Does that sound like the shape of it, or more of a city trip?",
+  "Here's an idea:\n\n**Scottsdale, AZ** — hiking by day, pool time and a nice dinner each night, short direct flight.\n\n**San Juan, PR** — beach-first, still an easy direct flight.\n\nDoes either sound like the shape of it, or more of a city trip?",
   "Good to know — I'd lock in one of those and we can work out actual dates next.",
 ]
 

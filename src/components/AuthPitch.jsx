@@ -6,6 +6,11 @@ import { Icon } from './Icon'
 // knows what they're signing up for before they commit to an account.
 const HIGHLIGHTS = [
   {
+    icon: 'compass',
+    title: "Don't even have a destination yet?",
+    text: 'Talk it through with Compass first — it asks the right questions and helps you land on a trip.',
+  },
+  {
     icon: 'sparkle',
     title: 'AI-drafted itinerary',
     text: 'Grounded in real opening hours and travel times — not guesses.',
