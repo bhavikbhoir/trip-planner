@@ -46,11 +46,21 @@ export default function TripDashboard() {
     >
       <div className="page-head">
         <h1>Your trips</h1>
-        <Link className="btn ghost small" to="/compass">
-          <Icon name="compass" />
-          Ask Compass
-        </Link>
       </div>
+
+      <Link className="compass-promo panel glass" to="/compass">
+        <span className="icon-badge">
+          <Icon name="compass" />
+        </span>
+        <div className="compass-promo-copy">
+          <p className="compass-promo-title">Not sure where to go yet?</p>
+          <p className="compass-promo-sub">Talk it through with Compass — it'll help you land on a trip.</p>
+        </div>
+        <span className="btn accent small">
+          <Icon name="route" />
+          Start planning
+        </span>
+      </Link>
 
       {error && <div className="error-banner">{error}</div>}
 
