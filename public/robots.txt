@@ -1,5 +1,11 @@
 User-agent: *
+Allow: /
 Allow: /login
 Allow: /register
 Allow: /forgot-password
-Disallow: /
+Disallow: /trip/
+Disallow: /trips/
+Disallow: /compass
+Disallow: /settings
+
+Sitemap: https://trip-planner-manifest.web.app/sitemap.xml
