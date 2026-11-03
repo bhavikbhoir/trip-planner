@@ -46,6 +46,10 @@ export default function TripDashboard() {
     >
       <div className="page-head">
         <h1>Your trips</h1>
+        <Link className="btn ghost small" to="/compass">
+          <Icon name="compass" />
+          Ask Compass
+        </Link>
       </div>
 
       {error && <div className="error-banner">{error}</div>}

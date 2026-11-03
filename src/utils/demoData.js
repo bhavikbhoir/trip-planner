@@ -46,8 +46,8 @@ export function isDemoMode() {
   return typeof window !== 'undefined' && window.localStorage.getItem(DEMO_STORAGE_KEY) === '1'
 }
 
-function notFound() {
-  const e = new Error('Trip not found')
+function notFound(msg) {
+  const e = new Error(msg || 'Trip not found')
   e.status = 404
   return e
 }
@@ -373,6 +373,25 @@ function makeInitialStore() {
 
 let store = makeInitialStore()
 
+// Compass drafts — scoped to the demo user, not any trip, so they live in
+// their own top-level store rather than inside `store`.
+let drafts = []
+
+// No real Bedrock call in demo mode, so these stand in for it — a small
+// scripted back-and-forth rather than a generic placeholder, same spirit
+// as DEMO_TIPS/DEMO_WEATHER above. Cycles through in order, then repeats
+// the last line for anything past a short demo conversation.
+const COMPASS_DEMO_REPLIES = [
+  "Nice. Roughly when were you thinking, and how many days can you actually get away for?",
+  'Got it. Would you rather keep it easy — somewhere warm, pool and good food — or more active, with hiking or a city to explore?',
+  "Here's an idea: somewhere warm with a short direct flight, hiking by day and a nice dinner each night — Scottsdale or San Juan both fit. Does that sound like the shape of it, or more of a city trip?",
+  "Good to know — I'd lock in one of those and we can work out actual dates next.",
+]
+
+function compassDemoReply(turnIndex) {
+  return COMPASS_DEMO_REPLIES[Math.min(turnIndex, COMPASS_DEMO_REPLIES.length - 1)]
+}
+
 // Seeded so the notification bell has something to show in demo mode — real
 // notifications are fanned out server-side (on join, new suggestion, and
 // plan regeneration), which demo mode has no independent-actor model to
@@ -476,6 +495,53 @@ export async function demoRequest(method, path, body) {
     if (segments.length === 2 && segments[1] === 'mark-read' && method === 'POST') {
       notifications = notifications.map((n) => ({ ...n, read: true }))
       return { ok: true }
+    }
+    throw badRequest(`No demo handler for ${method} ${path}`)
+  }
+
+  if (segments[0] === 'drafts') {
+    if (segments.length === 1 && method === 'GET') {
+      const sorted = [...drafts].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+      return {
+        drafts: sorted.map(({ draftId, status, messages, createdAt, updatedAt }) => ({
+          draftId,
+          status,
+          messageCount: messages.length,
+          lastMessage: messages[messages.length - 1]?.content || null,
+          createdAt,
+          updatedAt,
+        })),
+      }
+    }
+    if (segments.length === 1 && method === 'POST') {
+      const now = nowIso()
+      const draft = { draftId: `draft-${Math.random().toString(36).slice(2, 8)}`, ownerId: DEMO_USER.userId, messages: [], status: 'active', createdAt: now, updatedAt: now }
+      drafts = [...drafts, draft]
+      return { draft }
+    }
+    if (segments.length === 2 && method === 'GET') {
+      const draft = drafts.find((d) => d.draftId === segments[1])
+      if (!draft) throw notFound('Draft not found')
+      return { draft }
+    }
+    if (segments.length === 3 && segments[2] === 'messages' && method === 'POST') {
+      const idx = drafts.findIndex((d) => d.draftId === segments[1])
+      if (idx < 0) throw notFound('Draft not found')
+      const draft = drafts[idx]
+      const content = (body?.content || '').trim()
+      if (!content) throw badRequest('content is required')
+      const turnIndex = draft.messages.filter((m) => m.role === 'assistant').length
+      const now = nowIso()
+      // A small, deliberate delay — a reply that lands instantly reads as
+      // fake in a way a real network round-trip to Bedrock wouldn't.
+      await new Promise((resolve) => setTimeout(resolve, 500))
+      const updated = {
+        ...draft,
+        messages: [...draft.messages, { role: 'user', content, ts: now }, { role: 'assistant', content: compassDemoReply(turnIndex), ts: now }],
+        updatedAt: now,
+      }
+      drafts[idx] = updated
+      return { draft: updated }
     }
     throw badRequest(`No demo handler for ${method} ${path}`)
   }
