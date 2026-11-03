@@ -1,16 +1,39 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import AppShell from '../components/AppShell'
 import { Icon } from '../components/Icon'
 import './pages.scss'
 
+const TRAVEL_STYLES = [
+  { value: 'solo', label: 'Solo' },
+  { value: 'couple', label: 'Couple' },
+  { value: 'family', label: 'Family' },
+  { value: 'friends', label: 'Friends' },
+]
+const INTERESTS = ['Hiking & nature', 'Museums & culture', 'Beaches', 'Nightlife', 'Shopping']
+
 export default function Settings() {
-  const { user, updateDisplayName, updateWeatherUnit } = useAuth()
+  const { user, updateDisplayName, updateWeatherUnit, updateTravelProfile } = useAuth()
   const [name, setName] = useState(user?.displayName || '')
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState('')
   const [saved, setSaved] = useState(false)
   const weatherUnit = user?.weatherUnit || 'imperial'
+  const travelProfile = user?.travelProfile || {}
+  const interests = travelProfile.interests || []
+
+  // Account prefs load async (see syncAccountPrefs), so the first render
+  // or two can land before travelProfile.homeBase actually arrives —
+  // local state needs to pick up that later value, not just read it once.
+  const [homeBase, setHomeBase] = useState(travelProfile.homeBase || '')
+  useEffect(() => {
+    setHomeBase(travelProfile.homeBase || '')
+  }, [travelProfile.homeBase])
+
+  function toggleInterest(value) {
+    const next = interests.includes(value) ? interests.filter((i) => i !== value) : [...interests, value]
+    updateTravelProfile({ interests: next })
+  }
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -81,6 +104,63 @@ export default function Settings() {
             Applies to weather shown on any trip you're part of.
           </p>
         </div>
+      </div>
+
+      <div className="panel glass" style={{ maxWidth: 420, marginTop: 16 }}>
+        <div className="field">
+          <label htmlFor="settingsHomeBase">Usually traveling from</label>
+          <div className="field-input">
+            <Icon name="pin" />
+            <input
+              id="settingsHomeBase"
+              placeholder="e.g. Chicago, IL"
+              value={homeBase}
+              onChange={(e) => setHomeBase(e.target.value)}
+              onBlur={() => {
+                if (homeBase !== (travelProfile.homeBase || '')) updateTravelProfile({ homeBase: homeBase.trim() })
+              }}
+            />
+          </div>
+        </div>
+
+        <div className="field" style={{ marginTop: 16 }}>
+          <label>Usually traveling</label>
+          <div className="chip-grid">
+            {TRAVEL_STYLES.map((s) => (
+              <button
+                key={s.value}
+                type="button"
+                className="chip"
+                aria-pressed={travelProfile.travelStyle === s.value}
+                onClick={() => updateTravelProfile({ travelStyle: travelProfile.travelStyle === s.value ? null : s.value })}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="field" style={{ marginTop: 16 }}>
+          <label>Usually into</label>
+          <div className="chip-grid">
+            {INTERESTS.map((i) => (
+              <button
+                key={i}
+                type="button"
+                className="chip"
+                aria-pressed={interests.includes(i)}
+                onClick={() => toggleInterest(i)}
+              >
+                {i}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <p className="q-sub" style={{ marginTop: 10 }}>
+          Compass uses this so it doesn't have to ask every time — it's a starting point, not a rule, so any of it's
+          easy to change per trip.
+        </p>
       </div>
     </AppShell>
   )

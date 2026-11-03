@@ -48,7 +48,9 @@ async function syncAccountPrefs(setUser) {
   try {
     const res = await api.get('/me')
     if (res.theme) setStoredTheme(res.theme)
-    setUser((u) => (u ? { ...u, weatherUnit: res.weatherUnit || 'imperial' } : u))
+    setUser((u) =>
+      u ? { ...u, weatherUnit: res.weatherUnit || 'imperial', travelProfile: res.travelProfile || null } : u
+    )
   } catch {
     // best-effort
   }
@@ -192,6 +194,18 @@ export function AuthProvider({ children }) {
     }
   }
 
+  // Partial update — only the keys present in `patch` are sent, so toggling
+  // one interest doesn't require resending homeBase/travelStyle too.
+  async function updateTravelProfile(patch) {
+    setUser((u) => (u ? { ...u, travelProfile: { ...u.travelProfile, ...patch } } : u))
+    if (isDemoMode()) return
+    try {
+      await api.patch('/me/travelProfile', patch)
+    } catch {
+      // best-effort
+    }
+  }
+
   return (
     <AuthContext.Provider
       value={{
@@ -210,6 +224,7 @@ export function AuthProvider({ children }) {
         updateDisplayName,
         updateTheme,
         updateWeatherUnit,
+        updateTravelProfile,
       }}
     >
       {children}

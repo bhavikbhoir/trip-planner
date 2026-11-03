@@ -1883,3 +1883,93 @@
     margin-top: 2px;
   }
 }
+
+// ── Compass — conversation threads dropdown ──────────────────────────
+.compass-threads-wrap {
+  position: relative;
+}
+
+.compass-threads-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: min(320px, 85vw);
+  max-height: 360px;
+  overflow-y: auto;
+  background: var(--surface-solid);
+  border: 1px solid var(--surface-border);
+  border-radius: $radius-sm;
+  box-shadow: 0 10px 30px -12px var(--shadow);
+  z-index: 30;
+  padding: 6px;
+}
+
+.compass-thread-new {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  padding: 9px 10px;
+  margin-bottom: 4px;
+  border-radius: $radius-sm;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: $font-sm;
+  font-weight: 700;
+  color: var(--accent-1);
+
+  &:hover {
+    background: color-mix(in srgb, var(--accent-1) 8%, transparent);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.compass-threads-empty {
+  padding: 16px 10px;
+  font-size: $font-sm;
+  color: var(--ink-dim);
+  text-align: center;
+}
+
+.compass-thread-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  text-align: left;
+  padding: 9px 10px;
+  border-radius: $radius-sm;
+  border: none;
+  border-top: 1px solid var(--surface-border);
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--ink);
+
+  &:hover {
+    background: color-mix(in srgb, var(--accent-1) 8%, transparent);
+  }
+
+  &.active {
+    background: color-mix(in srgb, var(--accent-1) 12%, transparent);
+  }
+}
+
+.compass-thread-title {
+  font-size: $font-sm;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.compass-thread-time {
+  font-size: $font-xs;
+  color: var(--ink-dim);
+}
