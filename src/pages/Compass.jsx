@@ -18,6 +18,15 @@ function renderInline(text) {
   })
 }
 
+function timeAgo(iso) {
+  const mins = Math.round((Date.now() - new Date(iso).getTime()) / 60000)
+  if (mins < 1) return 'just now'
+  if (mins < 60) return `${mins}m ago`
+  const hours = Math.round(mins / 60)
+  if (hours < 24) return `${hours}h ago`
+  return `${Math.round(hours / 24)}d ago`
+}
+
 // No draftId in the URL means "open Compass" rather than "start over" —
 // resume the most recently active draft if one exists, same as reopening
 // any chat app. Only create a brand new draft when there's genuinely
@@ -34,6 +43,10 @@ export default function Compass() {
   const [input, setInput] = useState('')
   const [sendError, setSendError] = useState('')
   const [isSending, setIsSending] = useState(false)
+
+  const [threads, setThreads] = useState([])
+  const [threadsLoading, setThreadsLoading] = useState(false)
+  const [showThreads, setShowThreads] = useState(false)
 
   const threadRef = useRef(null)
   const inputRef = useRef(null)
@@ -92,18 +105,41 @@ export default function Compass() {
   }, [draftId])
 
   async function handleStartNew() {
+    setShowThreads(false)
     setIsStartingNew(true)
     setLoadError('')
     try {
       const res = await api.post('/drafts', {})
       setDraft(res.draft)
       isFirstScroll.current = true
-      navigate(`/compass/${res.draft.draftId}`, { replace: true })
+      navigate(`/compass/${res.draft.draftId}`)
     } catch (e) {
       setLoadError(e.message || 'Could not start a new conversation.')
     } finally {
       setIsStartingNew(false)
     }
+  }
+
+  async function toggleThreads() {
+    if (!showThreads) {
+      setThreadsLoading(true)
+      try {
+        const res = await api.get('/drafts')
+        setThreads(res.drafts || [])
+      } catch {
+        setThreads([])
+      } finally {
+        setThreadsLoading(false)
+      }
+    }
+    setShowThreads((s) => !s)
+  }
+
+  function openThread(id) {
+    setShowThreads(false)
+    if (id === draft?.draftId) return
+    isFirstScroll.current = true
+    navigate(`/compass/${id}`)
   }
 
   // Jump instantly to the bottom on first load (a resumed draft shouldn't
@@ -152,10 +188,36 @@ export default function Compass() {
       <div className="page-head">
         <h1>Compass</h1>
         {draft && (
-          <button className="btn ghost small" type="button" onClick={handleStartNew} disabled={isStartingNew}>
-            <Icon name="plus" />
-            Start new conversation
-          </button>
+          <div className="compass-threads-wrap">
+            <button className="btn ghost small" type="button" onClick={toggleThreads} aria-expanded={showThreads}>
+              <Icon name="chat" />
+              Conversations
+            </button>
+            {showThreads && (
+              <div className="compass-threads-panel">
+                <button className="compass-thread-new" type="button" onClick={handleStartNew} disabled={isStartingNew}>
+                  <Icon name="plus" />
+                  New conversation
+                </button>
+                {threadsLoading && <p className="compass-threads-empty">Loading…</p>}
+                {!threadsLoading && threads.length === 0 && (
+                  <p className="compass-threads-empty">No past conversations yet.</p>
+                )}
+                {!threadsLoading &&
+                  threads.map((t) => (
+                    <button
+                      key={t.draftId}
+                      type="button"
+                      className={`compass-thread-item${t.draftId === draft.draftId ? ' active' : ''}`}
+                      onClick={() => openThread(t.draftId)}
+                    >
+                      <span className="compass-thread-title">{t.firstMessage || 'New conversation'}</span>
+                      <span className="compass-thread-time">{timeAgo(t.updatedAt)}</span>
+                    </button>
+                  ))}
+              </div>
+            )}
+          </div>
         )}
       </div>
 

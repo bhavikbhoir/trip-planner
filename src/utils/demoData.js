@@ -507,6 +507,7 @@ export async function demoRequest(method, path, body) {
           draftId,
           status,
           messageCount: messages.length,
+          firstMessage: messages.find((m) => m.role === 'user')?.content || null,
           lastMessage: messages[messages.length - 1]?.content || null,
           createdAt,
           updatedAt,
