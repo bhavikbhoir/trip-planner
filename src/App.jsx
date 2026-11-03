@@ -15,6 +15,7 @@ import Bookings from './pages/Bookings'
 import Expenses from './pages/Expenses'
 import Recap from './pages/Recap'
 import Settings from './pages/Settings'
+import Compass from './pages/Compass'
 
 function ProtectedRoute({ children }) {
   const { user, isLoading } = useAuth()
@@ -55,6 +56,22 @@ export default function App() {
           element={
             <ProtectedRoute>
               <CreateTrip />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/compass"
+          element={
+            <ProtectedRoute>
+              <Compass />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/compass/:draftId"
+          element={
+            <ProtectedRoute>
+              <Compass />
             </ProtectedRoute>
           }
         />

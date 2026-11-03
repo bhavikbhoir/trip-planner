@@ -1729,3 +1729,97 @@
   color: var(--ink-dim);
   margin-top: 10px;
 }
+
+// ── Compass ─────────────────────────────────────────────────────────
+.compass-shell {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  height: min(640px, 70vh);
+}
+
+.compass-thread {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.compass-bubble {
+  max-width: 78%;
+  padding: 10px 14px;
+  border-radius: $radius-md;
+  font-size: $font-sm;
+  line-height: 1.5;
+  white-space: pre-wrap;
+
+  &.assistant {
+    align-self: flex-start;
+    background: var(--surface-solid);
+    border: 1px solid var(--surface-border);
+  }
+
+  &.user {
+    align-self: flex-end;
+    background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+    color: #fff;
+  }
+
+  &.pending {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    padding: 14px;
+  }
+}
+
+.compass-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ink-dim);
+  animation: compass-bounce 1.1s infinite ease-in-out;
+
+  &:nth-child(2) {
+    animation-delay: 0.15s;
+  }
+  &:nth-child(3) {
+    animation-delay: 0.3s;
+  }
+}
+
+@keyframes compass-bounce {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  30% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
+.compass-error {
+  margin: 0 20px 10px;
+}
+
+.compass-input-row {
+  display: flex;
+  gap: 10px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--surface-border);
+
+  .compass-field {
+    flex: 1;
+  }
+}
+
+@media (max-width: $bp-mobile) {
+  .compass-bubble {
+    max-width: 88%;
+  }
+}

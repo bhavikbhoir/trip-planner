@@ -284,6 +284,11 @@ h3 {
 }
 
 .page-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: $space-md;
   margin-bottom: 22px;
 
   h1 {
