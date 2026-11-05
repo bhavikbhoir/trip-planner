@@ -9,8 +9,16 @@ import './pages.scss'
 // as plain chat bubbles — rather than fight that in the prompt and lose
 // genuinely useful structure in longer replies, render the one marker it
 // actually uses. Not a general markdown parser, just **bold**.
+//
+// A reply that got cut off mid-sentence (hitting the token cap) can end
+// with a single unpaired ** instead of a closing one — strip it rather
+// than show the user a stray pair of asterisks that was never meant to
+// be visible markup.
 function renderInline(text) {
-  return text.split(/(\*\*[^*]+\*\*)/g).map((part, i) => {
+  const markerCount = (text.match(/\*\*/g) || []).length
+  const clean = markerCount % 2 === 1 ? text.replace(/\*\*(?!.*\*\*)/s, '') : text
+
+  return clean.split(/(\*\*[^*]+\*\*)/g).map((part, i) => {
     if (part.startsWith('**') && part.endsWith('**') && part.length > 4) {
       return <strong key={i}>{part.slice(2, -2)}</strong>
     }
@@ -163,6 +171,17 @@ export default function Compass() {
     if (!loading && !isSending) inputRef.current?.focus()
   }, [loading, isSending])
 
+  // Grows the textarea with what's typed instead of scrolling a single
+  // line sideways, up to a cap — past that it scrolls internally rather
+  // than pushing the send button off-screen. Resets to one line once the
+  // field clears (e.g. right after sending).
+  useEffect(() => {
+    const el = inputRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${Math.min(el.scrollHeight, 160)}px`
+  }, [input])
+
   async function handleSend(e) {
     e.preventDefault()
     const content = input.trim()
@@ -257,12 +276,18 @@ export default function Compass() {
           <form className="compass-input-row" onSubmit={handleSend}>
             <div className="field-input compass-field">
               <Icon name="compass" />
-              <input
+              <textarea
                 ref={inputRef}
-                type="text"
+                rows={1}
                 placeholder="Tell Compass what you're thinking…"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    handleSend(e)
+                  }
+                }}
                 disabled={isSending}
                 aria-label="Message Compass"
               />

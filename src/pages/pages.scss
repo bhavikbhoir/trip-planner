@@ -1819,12 +1819,22 @@
 
 .compass-input-row {
   display: flex;
+  align-items: flex-end;
   gap: 10px;
   padding: 14px 20px;
   border-top: 1px solid var(--surface-border);
 
   .compass-field {
     flex: 1;
+
+    textarea {
+      display: block;
+      width: 100%;
+      resize: none;
+      max-height: 160px;
+      line-height: 1.4;
+      overflow-y: auto;
+    }
   }
 }
 
