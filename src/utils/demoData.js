@@ -392,6 +392,12 @@ function compassDemoReply(turnIndex) {
   return COMPASS_DEMO_REPLIES[Math.min(turnIndex, COMPASS_DEMO_REPLIES.length - 1)]
 }
 
+// Stands in for the one-off Bedrock summarization call a real "continue
+// with context" does — demo mode has no model to call, so this is just a
+// plausible fixed summary for any draft that has at least one message.
+const COMPASS_DEMO_HANDOFF_SUMMARY =
+  '- Looking at a short warm-weather trip, open on exact dates\n- Scottsdale and San Juan both came up as easy-flight options\n- Leaning active-but-relaxed — hiking or a city, plus pool/dinner time'
+
 // Seeded so the notification bell has something to show in demo mode — real
 // notifications are fanned out server-side (on join, new suggestion, and
 // plan regeneration), which demo mode has no independent-actor model to
@@ -516,7 +522,17 @@ export async function demoRequest(method, path, body) {
     }
     if (segments.length === 1 && method === 'POST') {
       const now = nowIso()
-      const draft = { draftId: `draft-${Math.random().toString(36).slice(2, 8)}`, ownerId: DEMO_USER.userId, messages: [], status: 'active', createdAt: now, updatedAt: now }
+      const source = body?.sourceDraftId ? drafts.find((d) => d.draftId === body.sourceDraftId) : null
+      const draft = {
+        draftId: `draft-${Math.random().toString(36).slice(2, 8)}`,
+        ownerId: DEMO_USER.userId,
+        messages: [],
+        status: 'active',
+        carriedSummary: source?.messages.length ? COMPASS_DEMO_HANDOFF_SUMMARY : null,
+        sourceDraftId: source ? source.draftId : null,
+        createdAt: now,
+        updatedAt: now,
+      }
       drafts = [...drafts, draft]
       return { draft }
     }

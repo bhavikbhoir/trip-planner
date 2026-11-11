@@ -9,14 +9,26 @@ import './pages.scss'
 // as plain chat bubbles — rather than fight that in the prompt and lose
 // genuinely useful structure in longer replies, render the one marker it
 // actually uses. Not a general markdown parser, just **bold**.
+//
+// A reply that got cut off mid-sentence (hitting the token cap) can end
+// with a single unpaired ** instead of a closing one — strip it rather
+// than show the user a stray pair of asterisks that was never meant to
+// be visible markup.
 function renderInline(text) {
-  return text.split(/(\*\*[^*]+\*\*)/g).map((part, i) => {
+  const markerCount = (text.match(/\*\*/g) || []).length
+  const clean = markerCount % 2 === 1 ? text.replace(/\*\*(?!.*\*\*)/s, '') : text
+
+  return clean.split(/(\*\*[^*]+\*\*)/g).map((part, i) => {
     if (part.startsWith('**') && part.endsWith('**') && part.length > 4) {
       return <strong key={i}>{part.slice(2, -2)}</strong>
     }
     return part
   })
 }
+
+// Mirrors MAX_USER_TURNS in trip-planner-api's functions/drafts/sendMessage.js —
+// keep the two in sync if that cap ever changes.
+const MAX_USER_TURNS = 24
 
 function timeAgo(iso) {
   const mins = Math.round((Date.now() - new Date(iso).getTime()) / 60000)
@@ -39,6 +51,7 @@ export default function Compass() {
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
   const [isStartingNew, setIsStartingNew] = useState(false)
+  const [isContinuing, setIsContinuing] = useState(false)
 
   const [input, setInput] = useState('')
   const [sendError, setSendError] = useState('')
@@ -120,6 +133,27 @@ export default function Compass() {
     }
   }
 
+  // Starts a new draft that carries a short summary of this one forward
+  // (see POST /drafts' sourceDraftId), instead of a blank slate — the
+  // option offered once a conversation's hit its turn cap, and available
+  // any time from the Conversations panel.
+  async function handleContinueWithContext() {
+    if (!draft) return
+    setShowThreads(false)
+    setIsContinuing(true)
+    setLoadError('')
+    try {
+      const res = await api.post('/drafts', { sourceDraftId: draft.draftId })
+      setDraft(res.draft)
+      isFirstScroll.current = true
+      navigate(`/compass/${res.draft.draftId}`)
+    } catch (e) {
+      setLoadError(e.message || 'Could not continue that conversation.')
+    } finally {
+      setIsContinuing(false)
+    }
+  }
+
   async function toggleThreads() {
     if (!showThreads) {
       setThreadsLoading(true)
@@ -163,6 +197,21 @@ export default function Compass() {
     if (!loading && !isSending) inputRef.current?.focus()
   }, [loading, isSending])
 
+  // Grows the textarea with what's typed instead of scrolling a single
+  // line sideways, up to a cap — past that it scrolls internally rather
+  // than pushing the send button off-screen. Resets to one line once the
+  // field clears (e.g. right after sending).
+  useEffect(() => {
+    const el = inputRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${Math.min(el.scrollHeight, 160)}px`
+  }, [input])
+
+  const userTurns = draft?.messages.filter((m) => m.role === 'user').length ?? 0
+  const turnsRemaining = MAX_USER_TURNS - userTurns
+  const capReached = turnsRemaining <= 0
+
   async function handleSend(e) {
     e.preventDefault()
     const content = input.trim()
@@ -195,10 +244,26 @@ export default function Compass() {
             </button>
             {showThreads && (
               <div className="compass-threads-panel">
-                <button className="compass-thread-new" type="button" onClick={handleStartNew} disabled={isStartingNew}>
+                <button
+                  className="compass-thread-new"
+                  type="button"
+                  onClick={handleStartNew}
+                  disabled={isStartingNew || isContinuing}
+                >
                   <Icon name="plus" />
                   New conversation
                 </button>
+                {draft.messages.length > 0 && (
+                  <button
+                    className="compass-thread-new"
+                    type="button"
+                    onClick={handleContinueWithContext}
+                    disabled={isStartingNew || isContinuing}
+                  >
+                    <Icon name="route" />
+                    {isContinuing ? 'Carrying context…' : 'Continue with context'}
+                  </button>
+                )}
                 {threadsLoading && <p className="compass-threads-empty">Loading…</p>}
                 {!threadsLoading && threads.length === 0 && (
                   <p className="compass-threads-empty">No past conversations yet.</p>
@@ -232,6 +297,15 @@ export default function Compass() {
       {!loading && !loadError && draft && (
         <div className="compass-shell panel glass">
           <div className="compass-thread" ref={threadRef}>
+            {draft.carriedSummary && (
+              <div className="compass-carried">
+                <Icon name="route" />
+                <div>
+                  <p className="compass-carried-label">Picked up from your last conversation</p>
+                  <p className="compass-carried-text">{renderInline(draft.carriedSummary)}</p>
+                </div>
+              </div>
+            )}
             {draft.messages.length === 0 && (
               <div className="compass-bubble assistant">
                 Where are you thinking of going, or do you want to figure that out together? Tell me roughly when
@@ -254,24 +328,57 @@ export default function Compass() {
 
           {sendError && <div className="error-banner compass-error">{sendError}</div>}
 
-          <form className="compass-input-row" onSubmit={handleSend}>
-            <div className="field-input compass-field">
-              <Icon name="compass" />
-              <input
-                ref={inputRef}
-                type="text"
-                placeholder="Tell Compass what you're thinking…"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                disabled={isSending}
-                aria-label="Message Compass"
-              />
+          {capReached ? (
+            <div className="compass-cap-row">
+              <p className="compass-cap-text">This conversation's reached its limit — start fresh to keep going.</p>
+              <div className="compass-cap-actions">
+                <button className="btn ghost small" type="button" onClick={handleStartNew} disabled={isStartingNew || isContinuing}>
+                  New conversation
+                </button>
+                <button
+                  className="btn accent small"
+                  type="button"
+                  onClick={handleContinueWithContext}
+                  disabled={isStartingNew || isContinuing}
+                >
+                  <Icon name="route" />
+                  {isContinuing ? 'Carrying context…' : 'Continue with context'}
+                </button>
+              </div>
             </div>
-            <button className="btn accent small" type="submit" disabled={isSending || !input.trim()}>
-              <Icon name="route" />
-              Send
-            </button>
-          </form>
+          ) : (
+            <>
+              {turnsRemaining <= 5 && (
+                <p className="compass-turns-warning">
+                  {turnsRemaining} message{turnsRemaining === 1 ? '' : 's'} left in this conversation.
+                </p>
+              )}
+              <form className="compass-input-row" onSubmit={handleSend}>
+                <div className="field-input compass-field">
+                  <Icon name="compass" />
+                  <textarea
+                    ref={inputRef}
+                    rows={1}
+                    placeholder="Tell Compass what you're thinking…"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault()
+                        handleSend(e)
+                      }
+                    }}
+                    disabled={isSending}
+                    aria-label="Message Compass"
+                  />
+                </div>
+                <button className="btn accent small" type="submit" disabled={isSending || !input.trim()}>
+                  <Icon name="route" />
+                  Send
+                </button>
+              </form>
+            </>
+          )}
         </div>
       )}
     </AppShell>

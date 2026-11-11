@@ -1817,14 +1817,87 @@
   margin: 0 20px 10px;
 }
 
+// A quieter, non-chat-bubble card so it reads as "background Compass
+// already has" rather than another message to respond to.
+.compass-carried {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  margin-bottom: 4px;
+  border-radius: $radius-md;
+  background: var(--surface-solid);
+  border: 1px dashed var(--surface-border);
+
+  .icon {
+    width: 15px;
+    height: 15px;
+    color: var(--ink-dim);
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+}
+
+.compass-carried-label {
+  font-size: $font-xs;
+  font-weight: 600;
+  color: var(--ink-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 4px;
+}
+
+.compass-carried-text {
+  font-size: $font-base;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.compass-turns-warning {
+  font-size: $font-xs;
+  color: var(--ink-dim);
+  padding: 0 20px;
+  margin: 10px 0 0;
+}
+
+// Replaces the input row once a conversation's hit its turn cap — same
+// footprint as the form it stands in for, so the panel doesn't jump.
+.compass-cap-row {
+  padding: 14px 20px;
+  border-top: 1px solid var(--surface-border);
+  text-align: center;
+}
+
+.compass-cap-text {
+  font-size: $font-base;
+  color: var(--ink-dim);
+  margin-bottom: 10px;
+}
+
+.compass-cap-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
 .compass-input-row {
   display: flex;
+  align-items: flex-end;
   gap: 10px;
   padding: 14px 20px;
   border-top: 1px solid var(--surface-border);
 
   .compass-field {
     flex: 1;
+
+    textarea {
+      display: block;
+      width: 100%;
+      resize: none;
+      max-height: 160px;
+      line-height: 1.4;
+      overflow-y: auto;
+    }
   }
 }
 

@@ -433,7 +433,8 @@ h3 {
     color: var(--ink-dim);
   }
 
-  input {
+  input,
+  textarea {
     flex: 1;
     font-family: inherit;
     font-size: $font-md;
